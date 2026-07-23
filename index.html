@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>產銷履歷栽培紀錄管理系統</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f6f8; color: #212121; margin: 0; font-size: 16px; overflow-x: hidden; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f6f8; color: #212121; margin: 0; font-size: 16px; }
     .nav-tabs { display: flex; background: #fff; border-bottom: 3px solid #2e7d32; }
     .tab-btn { flex: 1; padding: 14px; text-align: center; font-weight: bold; border: none; background: none; font-size: 16px; color: #666; cursor: pointer; }
     .tab-btn.active { background: #2e7d32; color: #fff; }
     
-    .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin: 10px; margin-bottom: 15px; }
+    .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin: 12px; }
     .user-badge { background: #e8f5e9; color: #1b5e20; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 16px; display: inline-block; margin-bottom: 12px; border: 1px solid #c8e6c9; }
     
     label { font-weight: bold; margin-top: 16px; display: block; color: #1b5e20; font-size: 17px; }
@@ -21,15 +21,26 @@
     .btn-submit { background: #2e7d32; color: #fff; border: none; font-weight: bold; margin-top: 24px; font-size: 18px; padding: 14px; border-radius: 10px; width: 100%; box-shadow: 0 4px 8px rgba(46,125,50,0.3); cursor: pointer; }
     .water-box { background: #e0f2f1; border: 2px solid #26a69a; padding: 12px; border-radius: 10px; margin-bottom: 12px; }
     
-    /* 核心相容性選單樣式 (支援滑動搜尋) */
-    .input-wrapper { position: relative; width: 100%; margin-top: 6px; }
-    .search-input-clearable { width: 100%; padding: 12px; padding-right: 36px; border-radius: 8px; border: 2px solid #b0bec5; font-size: 17px; background: #fff; box-sizing: border-box; }
-    .btn-clear-search { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; background: rgba(0,0,0,0.1); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: bold; cursor: pointer; border: none; visibility: hidden; opacity: 0; transition: all 0.1s; -webkit-tap-highlight-color: transparent; z-index: 10; }
-    .search-input-clearable:not(:placeholder-shown) + .btn-clear-search { visibility: visible; opacity: 1; }
+    /* 帶有圖示按鈕的輸入框組合 */
+    .input-btn-group { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+    .btn-pick-list { background: #2e7d32; color: #fff; border: none; padding: 12px 14px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; white-space: nowrap; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
     
-    /* 解決 datalist 選單樣式問題 */
-    input::-webkit-search-cancel-button { appearance: none; display: none; }
-    input::-ms-clear { display: none; }
+    /* 彈出清單視窗 (Modal) 樣式 - 徹底解決滑動卡頓 */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; display: none; justify-content: center; align-items: flex-end; }
+    .modal-overlay.open { display: flex; }
+    .modal-content { background: #fff; width: 100%; max-width: 600px; height: 80vh; border-radius: 16px 16px 0 0; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; animation: slideUp 0.25s ease-out; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 12px; }
+    .modal-title { font-size: 18px; font-weight: bold; color: #1b5e20; }
+    .btn-modal-close { background: #eceff1; border: none; font-size: 20px; font-weight: bold; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; color: #546e7a; }
+    
+    .modal-search-box { margin: 12px 0; }
+    
+    /* 可獨立順暢滑動的列表區塊 */
+    .modal-list-container { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; border-top: 1px solid #f0f0f0; }
+    .list-item { padding: 14px 12px; border-bottom: 1px solid #eee; font-size: 16px; cursor: pointer; }
+    .list-item:active { background-color: #e8f5e9; color: #2e7d32; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -60,7 +71,7 @@
       <div id="pesticideWaterBox" class="water-box" style="display:none;">
         <label style="margin-top:0; color:#00695c;">🚰 本次噴藥總水量：</label>
         <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
-          <input type="number" id="commonWaterAmount" placeholder="輸入總水量 (如: 300)" style="flex: 1;" />
+          <input type="number" id="commonWaterAmount" placeholder="輸入水量 (如: 300)" style="flex: 1;" />
           <span style="font-weight:bold; color:#00695c;">公升</span>
         </div>
       </div>
@@ -83,13 +94,28 @@
     <div id="historyList">⏳ 正在讀取歷史紀錄...</div>
   </div>
 
+  <!-- 全螢幕彈出視窗 Modal -->
+  <div id="materialModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div id="modalTitle" class="modal-title">📋 請選擇資材</div>
+        <button type="button" class="btn-modal-close" onclick="closeMaterialModal()">✕</button>
+      </div>
+      <div class="modal-search-box">
+        <input type="text" id="modalSearchInput" placeholder="🔍 打字搜尋 (如: 賽)..." oninput="filterModalList(this.value)" />
+      </div>
+      <div id="modalListContainer" class="modal-list-container"></div>
+    </div>
+  </div>
+
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script>
     const MY_LIFF_ID = "2010807836-ebDUVffs";
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwq1GZ2BN6j1GlTeXzjtraD0-HKsBwPwZrdF5_tqeavGY8ekDl_vLy_QMdjS_go6pItqw/exec";
 
     let currentUserId = "", currentUserName = "", actionData = {}, materialData = {};
-    let itemGroupCount = 0; // 用來生成唯一 ID
+    let itemGroupCount = 0;
+    let activeTargetInputId = ""; // 記錄當前正在挑選的輸入框 ID
 
     window.onload = function() {
       const today = new Date().toISOString().split('T')[0];
@@ -192,7 +218,6 @@
       }
 
       const index = itemGroupCount++;
-      const listId = `datalist_${defaultCat}_${index}`;
       const inputId = `itemName_${index}`;
       const fertilizerNumId = `fertilizerNum_${index}`;
 
@@ -200,23 +225,20 @@
       newGroup.className = 'item-group';
       newGroup.setAttribute('data-cat', defaultCat);
 
-      // 🌾 資材搜尋選單核心程式碼（回歸 datalist，相容性最高）
       if (defaultCat === '農藥') {
         newGroup.innerHTML = `
           <label style="margin-top:0; font-size:14px; color:#1b5e20;">🧪 農藥 / 防治資材品項 ${itemList.children.length + 1}：</label>
-          <div class="input-wrapper">
-            <input type="text" id="${inputId}" class="item-name search-input-clearable" list="${listId}" placeholder="🔍 輸入關鍵字搜尋 (如: 賽) 或直接挑選" />
-            <button type="button" class="btn-clear-search" onclick="clearInput('${inputId}')">✕</button>
-            <datalist id="${listId}"></datalist>
+          <div class="input-btn-group">
+            <input type="text" id="${inputId}" class="item-name" placeholder="輸入關鍵字或點右側挑選" />
+            <button type="button" class="btn-pick-list" onclick="openMaterialModal('${inputId}', '農藥')">📋 挑選資材</button>
           </div>
         `;
       } else {
         newGroup.innerHTML = `
           <label style="margin-top:0; font-size:14px; color:#1b5e20;">🌾 肥料 / 營養劑品項 ${itemList.children.length + 1}：</label>
-          <div class="input-wrapper">
-            <input type="text" id="${inputId}" class="item-name search-input-clearable" list="${listId}" placeholder="🔍 關鍵字搜尋或直接挑選" />
-            <button type="button" class="btn-clear-search" onclick="clearInput('${inputId}')">✕</button>
-            <datalist id="${listId}"></datalist>
+          <div class="input-btn-group">
+            <input type="text" id="${inputId}" class="item-name" placeholder="輸入關鍵字或點右側挑選" />
+            <button type="button" class="btn-pick-list" onclick="openMaterialModal('${inputId}', '肥料')">📋 挑選資材</button>
           </div>
 
           <div style="margin-top:8px;">
@@ -236,25 +258,56 @@
       }
 
       itemList.appendChild(newGroup);
+    }
 
-      // 初始化 datalist 選項 (完美解決清單不消失問題)
-      const dataListElem = document.getElementById(listId);
-      dataListElem.innerHTML = '';
+    /* 📋 滿版選單 Modal 邏輯 (順暢滑動不卡頓) */
+    function openMaterialModal(targetInputId, category) {
+      activeTargetInputId = targetInputId;
+      document.getElementById('modalTitle').innerHTML = `📋 請選擇${category}品項`;
+      document.getElementById('modalSearchInput').value = '';
+      
+      const container = document.getElementById('modalListContainer');
+      container.innerHTML = '';
 
-      if (materialData[defaultCat] && materialData[defaultCat].length > 0) {
-        materialData[defaultCat].forEach(fullName => {
-          if (!fullName.includes("---")) {
-            const optElem = document.createElement('option');
-            optElem.value = fullName; // 原生行為：打字模糊搜尋、滑動順暢
-            dataListElem.appendChild(optElem);
+      if (materialData[category] && materialData[category].length > 0) {
+        materialData[category].forEach(itemFullName => {
+          if (!itemFullName.includes("---")) {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'list-item';
+            itemDiv.innerHTML = itemFullName;
+            itemDiv.onclick = function() {
+              selectMaterialItem(itemFullName);
+            };
+            container.appendChild(itemDiv);
           }
         });
       }
+
+      document.getElementById('materialModal').classList.add('open');
     }
 
-    // ✕ 一鍵清空邏輯
-    function clearInput(targetInputId) {
-      document.getElementById(targetInputId).value = '';
+    function closeMaterialModal() {
+      document.getElementById('materialModal').classList.remove('open');
+    }
+
+    function filterModalList(keyword) {
+      const cleanKey = keyword.trim().toLowerCase();
+      const items = document.querySelectorAll('#modalListContainer .list-item');
+      items.forEach(item => {
+        const text = item.innerHTML.toLowerCase();
+        if (cleanKey === '' || text.includes(cleanKey)) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    function selectMaterialItem(value) {
+      if (activeTargetInputId) {
+        document.getElementById(activeTargetInputId).value = value;
+      }
+      closeMaterialModal();
     }
 
     function switchTab(tab) {
@@ -320,7 +373,7 @@
           }
         }
 
-        if (items.length === 0) { alert('請輸入或選擇資材品項！'); return; }
+        if (items.length === 0) { alert('請輸入或挑選資材品項！'); return; }
         if (!detailString) detailString = items.join(' ; ');
 
       } else {
@@ -329,7 +382,6 @@
         detailString = amount ? `${taskName} [${amount}]` : taskName;
       }
 
-      // 禁用按鈕，防止重複送出
       const btnSubmit = document.getElementById('btnSubmit');
       btnSubmit.disabled = true;
       btnSubmit.innerHTML = '⚡ 正在送出...';
