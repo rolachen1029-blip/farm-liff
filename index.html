@@ -5,84 +5,104 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>產銷履歷栽培紀錄管理系統</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f6f8; color: #212121; margin: 0; font-size: 16px; }
-    .nav-tabs { display: flex; background: #fff; border-bottom: 3px solid #2e7d32; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f6f8; color: #212121; margin: 0; font-size: 16px; overflow-x: hidden; }
+    .nav-tabs { display: flex; background: #fff; border-bottom: 3px solid #2e7d32; position: fixed; top: 0; width: 100%; z-index: 100; }
     .tab-btn { flex: 1; padding: 14px; text-align: center; font-weight: bold; border: none; background: none; font-size: 16px; color: #666; cursor: pointer; }
     .tab-btn.active { background: #2e7d32; color: #fff; }
-    .card { background: #fff; padding: 20px; margin: 12px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    
+    .main-container { margin-top: 60px; padding: 10px; padding-bottom: 30px; box-sizing: border-box; }
+    .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 12px; }
     .user-badge { background: #e8f5e9; color: #1b5e20; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 16px; display: inline-block; margin-bottom: 12px; border: 1px solid #c8e6c9; }
+    
     label { font-weight: bold; margin-top: 16px; display: block; color: #1b5e20; font-size: 17px; }
-    select, input[type="date"], input[type="number"] { width: 100%; padding: 12px; margin-top: 6px; border-radius: 8px; border: 2px solid #b0bec5; font-size: 17px; background: #fff; box-sizing: border-box; }
-    .item-group { background: #f9fbe7; border: 2px dashed #9e9d24; padding: 12px; border-radius: 10px; margin-top: 10px; }
+    select, input[type="date"], input[type="number"], .input-like { width: 100%; padding: 12px; margin-top: 6px; border-radius: 8px; border: 2px solid #b0bec5; font-size: 17px; background: #fff; box-sizing: border-box; appearance: none; -webkit-appearance: none; }
+    
+    .item-group { background: #f9fbe7; border: 2px dashed #9e9d24; padding: 12px; border-radius: 10px; margin-top: 10px; position: relative; }
     .btn-add { background: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32; font-weight: bold; margin-top: 12px; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-size: 16px; }
     .btn-submit { background: #2e7d32; color: #fff; border: none; font-weight: bold; margin-top: 24px; font-size: 18px; padding: 14px; border-radius: 10px; width: 100%; box-shadow: 0 4px 8px rgba(46,125,50,0.3); cursor: pointer; }
     .water-box { background: #e0f2f1; border: 2px solid #26a69a; padding: 12px; border-radius: 10px; margin-bottom: 12px; }
     
-    /* 一鍵清空按鈕相關樣式 */
-    .clearable-container { position: relative; width: 100%; margin-top: 6px; }
-    .clearable-input { width: 100%; padding: 12px; padding-right: 40px; border-radius: 8px; border: 2px solid #b0bec5; font-size: 17px; background: #fff; box-sizing: border-box; }
-    .btn-clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; background: rgba(0,0,0,0.1); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; cursor: pointer; border: none; visibility: hidden; opacity: 0; transition: visibility 0s, opacity 0.2s linear; -webkit-tap-highlight-color: transparent; }
+    /* 一鍵清空框樣式 */
+    .clearable-container { position: relative; width: 100%; }
+    .clearable-input { width: 100%; padding: 12px; padding-right: 36px; border-radius: 8px; border: 2px solid #b0bec5; font-size: 17px; background: #fff; box-sizing: border-box; }
+    .btn-clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; background: rgba(0,0,0,0.1); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: bold; cursor: pointer; border: none; visibility: hidden; opacity: 0; transition: all 0.1s; -webkit-tap-highlight-color: transparent; z-index: 10; }
     .clearable-input:not(:placeholder-shown) + .btn-clear { visibility: visible; opacity: 1; }
-    .clearable-input::-ms-clear, .clearable-input::-webkit-search-cancel-button { display: none; }
+    
+    /* 核心客製化「可滑動搜尋選單」樣式 */
+    .dropdown-container { position: relative; width: 100%; margin-top: 6px; }
+    .search-input { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #b0bec5; font-size: 17px; background: #fff; box-sizing: border-box; cursor: pointer; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .search-input.placeholder { color: #9e9e9e; }
+    
+    /* 開啟資材選單時的搜尋按鈕 */
+    .btn-search-trigger { position: absolute; right: 0; top: 0; bottom: 0; background: #607d8b; color: #fff; border: none; border-radius: 0 8px 8px 0; padding: 0 12px; font-weight: bold; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    
+    /* 選單主體 */
+    .custom-dropdown-menu { position: absolute; top: 100%; left: 0; width: 100%; background: #fff; border: 2px solid #607d8b; border-radius: 8px; max-height: 250px; overflow-y: auto; box-shadow: 0 8px 16px rgba(0,0,0,0.2); display: none; z-index: 999; -webkit-overflow-scrolling: touch; box-sizing: border-box; }
+    .custom-dropdown-menu.open { display: block; }
+    
+    .dropdown-option { padding: 12px; border-bottom: 1px solid #eee; font-size: 16px; cursor: pointer; -webkit-tap-highlight-color: rgba(0,0,0,0.05); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dropdown-option:last-child { border-bottom: none; }
+    .dropdown-option:active, .dropdown-option.selected { background-color: #f1f8e9; color: #2e7d32; font-weight: bold; }
+    .dropdown-no-result { padding: 12px; color: #757575; text-align: center; }
   </style>
 </head>
 <body>
 
   <div class="nav-tabs">
-    <button class="tab-btn active" onclick="switchTab('input')">✍️ 新增栽培紀錄</button>
-    <button class="tab-btn" onclick="switchTab('history')">📖 我的歷史紀錄</button>
+    <button id="tabInputBtn" class="tab-btn active" onclick="switchTab('input')">✍️ 新增栽培紀錄</button>
+    <button id="tabHistoryBtn" class="tab-btn" onclick="switchTab('history')">📖 我的歷史紀錄</button>
   </div>
 
-  <div id="tabInput" class="card">
-    <div id="userInfo" class="user-badge">⏳ 辨識 LINE 身份中...</div>
-    
-    <label>1. 📅 請選擇作業日期：</label>
-    <input type="date" id="workDateSelect" />
+  <div class="main-container">
+    <div id="tabInput" class="card">
+      <div id="userInfo" class="user-badge">⏳ 辨識 LINE 身份中...</div>
+      
+      <label>1. 📅 請選擇作業日期：</label>
+      <input type="date" id="workDateSelect" />
 
-    <label style="margin-top:12px;">2. 🌱 請選擇田區：</label>
-    <select id="fieldSelect"><option value="">-- 讀取中 --</option></select>
+      <label style="margin-top:12px;">2. 🌱 請選擇田區：</label>
+      <select id="fieldSelect"><option value="">-- 讀取中 --</option></select>
 
-    <label style="margin-top:12px;">3. 🛠️ 請選擇作業種類：</label>
-    <select id="actionCategorySelect" onchange="onActionCategoryChange()">
-      <option value="">-- 讀取中 --</option>
-    </select>
+      <label style="margin-top:12px;">3. 🛠️ 請選擇作業種類：</label>
+      <select id="actionCategorySelect" onchange="onActionCategoryChange()">
+        <option value="">-- 讀取中 --</option>
+      </select>
 
-    <label style="margin-top:12px;">4. 📝 作業內容 / 資材明細：</label>
+      <label style="margin-top:12px;">4. 📝 作業內容 / 資材明細：</label>
 
-    <!-- 資材填寫區塊 -->
-    <div id="materialSection">
-      <!-- 噴藥專用的共用總水量輸入框 -->
-      <div id="pesticideWaterBox" class="water-box" style="display:none;">
-        <label style="margin-top:0; color:#00695c;">🚰 本次噴藥總水量：</label>
-        <div style="display: flex; align-items: center; gap: 6px;">
-          <!-- 使用 number input 並加上清空按鈕容器 -->
-          <div class="clearable-container">
-            <input type="number" id="commonWaterAmount" placeholder="輸入總水量 (如: 300)" class="clearable-input" oninput="toggleClear(this)" />
-            <button type="button" class="btn-clear" onclick="clearInput(this, 'commonWaterAmount')">✕</button>
+      <!-- 資材填寫區塊 -->
+      <div id="materialSection">
+        <div id="pesticideWaterBox" class="water-box" style="display:none;">
+          <label style="margin-top:0; color:#00695c;">🚰 本次噴藥總水量：</label>
+          <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
+            <div class="clearable-container" style="flex: 1;">
+              <input type="number" id="commonWaterAmount" placeholder="輸入水量 (如: 300)" class="clearable-input" />
+              <button type="button" class="btn-clear" onclick="clearSimpleInput('commonWaterAmount')">✕</button>
+            </div>
+            <span style="font-weight:bold; color:#00695c;">公升</span>
           </div>
-          <span style="font-weight:bold; color:#00695c;">公升</span>
+        </div>
+
+        <div id="itemList"></div>
+        <button type="button" class="btn-add" id="btnAddItemGroup" onclick="addItemGroup()">➕ 增加一種資材/混藥</button>
+      </div>
+
+      <!-- 一般農事/採收下拉區塊 (非資材作業時顯示) -->
+      <div id="generalTaskSection" style="display:none;">
+        <select id="generalTaskSelect"></select>
+        <div class="clearable-container" style="margin-top:6px;">
+          <input type="text" id="generalTaskAmount" placeholder="備註/採收數量 (如: 120公斤)，可不填" class="clearable-input" />
+          <button type="button" class="btn-clear" onclick="clearSimpleInput('generalTaskAmount')">✕</button>
         </div>
       </div>
 
-      <div id="itemList"></div>
-      <button type="button" class="btn-add" id="btnAddItemGroup" onclick="addItemGroup()">➕ 增加一種資材/混藥</button>
+      <button id="btnSubmit" type="button" class="btn-submit" onclick="submitData()">🚀 點擊送出栽培紀錄</button>
     </div>
 
-    <!-- 一般農事/採收下拉區塊 (非資材作業時顯示) -->
-    <div id="generalTaskSection" style="display:none;">
-      <select id="generalTaskSelect"></select>
-      <div class="clearable-container" style="margin-top:6px;">
-        <input type="text" id="generalTaskAmount" placeholder="備註/採收數量 (如: 120公斤)，可不填" class="clearable-input" oninput="toggleClear(this)" />
-        <button type="button" class="btn-clear" onclick="clearInput(this, 'generalTaskAmount')">✕</button>
-      </div>
+    <div id="tabHistory" class="card" style="display:none;">
+      <h4 style="margin-top:0; color:#2e7d32;">📋 您最近的栽培紀錄</h4>
+      <div id="historyList">⏳ 正在讀取歷史紀錄...</div>
     </div>
-
-    <button type="button" class="btn-submit" onclick="submitData()">🚀 點擊送出栽培紀錄</button>
-  </div>
-
-  <div id="tabHistory" class="card" style="display:none;">
-    <h4 style="margin-top:0; color:#2e7d32;">📋 您最近的栽培紀錄</h4>
-    <div id="historyList">⏳ 正在讀取歷史紀錄...</div>
   </div>
 
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -91,6 +111,7 @@
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwq1GZ2BN6j1GlTeXzjtraD0-HKsBwPwZrdF5_tqeavGY8ekDl_vLy_QMdjS_go6pItqw/exec";
 
     let currentUserId = "", currentUserName = "", actionData = {}, materialData = {};
+    let itemGroupCount = 0; // 用來生成不重複的 ID
 
     window.onload = function() {
       const today = new Date().toISOString().split('T')[0];
@@ -107,6 +128,13 @@
         }
       }).catch(err => {
         document.getElementById('userInfo').innerHTML = "⚠️ LIFF 初始化失敗";
+      });
+
+      // 點擊頁面其他地方，關閉選單
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown-container')) {
+          closeAllDropdowns();
+        }
       });
     };
 
@@ -192,39 +220,63 @@
         }
       }
 
-      const groupIndex = itemList.children.length;
-      const listId = `datalist_${defaultCat}_${groupIndex}`;
-      const inputId = `item_name_${defaultCat}_${groupIndex}`; // 獨一無二的輸入框 ID
-      const fertilizerNumId = `fertilizer_num_${groupIndex}`; // 施肥用量 ID
+      const index = itemGroupCount++;
+      const nameInputId = `itemNameInput_${index}`;
+      const searchBoxId = `itemSearchBox_${index}`;
+      const dropdownMenuId = `dropdownMenu_${index}`;
+      const fertilizerNumId = `fertilizerNumInput_${index}`;
 
       const newGroup = document.createElement('div');
       newGroup.className = 'item-group';
       newGroup.setAttribute('data-cat', defaultCat);
+      newGroup.id = `itemGroup_${index}`;
 
+      // 資材選擇部分，移除 datalist，改用客製化容器
       if (defaultCat === '農藥') {
         newGroup.innerHTML = `
-          <label style="margin-top:0; font-size:14px; color:#1b5e20;">🧪 農藥 / 防治資材品項 ${groupIndex + 1}：</label>
-          <div class="clearable-container">
-            <input type="text" id="${inputId}" class="item-name clearable-input" list="${listId}" placeholder="🔍 輸入關鍵字搜尋或點擊選擇" oninput="toggleClear(this)" />
-            <button type="button" class="btn-clear" onclick="clearInput(this, '${inputId}')">✕</button>
+          <label style="margin-top:0; font-size:14px; color:#1b5e20;">🧪 農藥 / 防治資材品項 ${itemList.children.length + 1}：</label>
+          <div class="dropdown-container">
+            <!-- 實際儲存值的框 (隱藏或不顯示 text) -->
+            <input type="hidden" id="${nameInputId}" class="item-hidden-value" />
+            <!-- 農民看到的框，點擊會彈出選單 -->
+            <input type="text" id="${searchBoxId}" class="search-input placeholder" placeholder="🔍 打字搜尋或滑動挑選藥劑" readonly onclick="toggleDropdown(${index})" />
+            <!-- 如果選項多，增加一個手動搜尋按鈕對焦 -->
+            <button type="button" class="btn-search-trigger" onclick="focusSearch(${index})">🔍 搜尋</button>
+            
+            <!-- 核心：完美滑動的客製化選單 -->
+            <div id="${dropdownMenuId}" class="custom-dropdown-menu">
+              <!-- 頂端搜尋對焦用框 (選填，可移除) -->
+              <div style="padding:8px; border-bottom:1px solid #eee; background:#f5f5f5; display:flex; align-items:center;">
+                 <input type="text" placeholder="🔍 在此輸入關鍵字篩選..." id="${dropdownMenuId}_search" style="width:100%; padding:8px; border-radius:4px; border:1px solid #ccc; font-size:15px;" oninput="filterDropdown(${index}, this.value)" />
+                 <button type="button" class="btn-clear" style="visibility:visible; opacity:1; position:relative; right:30px; transform:none;" onclick="clearDropdownSearch(${index})">✕</button>
+              </div>
+              <div id="${dropdownMenuId}_list" style="-webkit-overflow-scrolling: touch;"></div>
+            </div>
           </div>
-          <datalist id="${listId}"></datalist>
         `;
       } else {
+        // 肥料同理
         newGroup.innerHTML = `
-          <label style="margin-top:0; font-size:14px; color:#1b5e20;">🌾 肥料 / 營養劑品項 ${groupIndex + 1}：</label>
-          <div class="clearable-container">
-            <input type="text" id="${inputId}" class="item-name clearable-input" list="${listId}" placeholder="🔍 輸入關鍵字搜尋或點擊選擇" oninput="toggleClear(this)" />
-            <button type="button" class="btn-clear" onclick="clearInput(this, '${inputId}')">✕</button>
+          <label style="margin-top:0; font-size:14px; color:#1b5e20;">🌾 肥料 / 營養劑品項 ${itemList.children.length + 1}：</label>
+          <div class="dropdown-container">
+            <input type="hidden" id="${nameInputId}" class="item-hidden-value" />
+            <input type="text" id="${searchBoxId}" class="search-input placeholder" placeholder="🔍 打字搜尋或滑動挑選肥料" readonly onclick="toggleDropdown(${index})" />
+            <button type="button" class="btn-search-trigger" onclick="focusSearch(${index})">🔍 搜尋</button>
+            <div id="${dropdownMenuId}" class="custom-dropdown-menu">
+              <div style="padding:8px; border-bottom:1px solid #eee; background:#f5f5f5; display:flex; align-items:center;">
+                 <input type="text" placeholder="🔍 關鍵字搜尋..." id="${dropdownMenuId}_search" style="width:100%; padding:8px; border-radius:4px; border:1px solid #ccc; font-size:15px;" oninput="filterDropdown(${index}, this.value)" />
+                 <button type="button" class="btn-clear" style="visibility:visible; opacity:1; position:relative; right:30px; transform:none;" onclick="clearDropdownSearch(${index})">✕</button>
+              </div>
+              <div id="${dropdownMenuId}_list" style="-webkit-overflow-scrolling: touch;"></div>
+            </div>
           </div>
-          <datalist id="${listId}"></datalist>
 
           <div style="margin-top:8px;">
             <label style="margin-top:0; font-size:14px; color:#1b5e20;">📦 本次肥料用量：</label>
             <div style="display: flex; gap: 8px;">
-              <div class="clearable-container" style="flex: 2;">
-                <input type="number" id="${fertilizerNumId}" class="fertilizer-num clearable-input" placeholder="數量 (如: 2)" oninput="toggleClear(this)" />
-                <button type="button" class="btn-clear" onclick="clearInput(this, '${fertilizerNumId}')">✕</button>
+              <div class="clearable-container" style="flex: 2; margin-top:6px;">
+                <input type="number" id="${fertilizerNumId}" class="fertilizer-num clearable-input" placeholder="數量 (如: 2)" />
+                <button type="button" class="btn-clear" onclick="clearSimpleInput('${fertilizerNumId}')">✕</button>
               </div>
               <select class="fertilizer-unit" style="flex: 1; margin-top: 6px;">
                 <option value="包">包</option>
@@ -240,25 +292,138 @@
 
       itemList.appendChild(newGroup);
 
-      const dataListElem = newGroup.querySelector(`#${listId}`);
-      if (materialData[defaultCat] && materialData[defaultCat].length > 0) {
-        materialData[defaultCat].forEach(itemFullName => {
-          if (!itemFullName.includes("---")) {
-            let opt = document.createElement('option');
-            opt.value = itemFullName;
-            dataListElem.appendChild(opt);
+      // 載入資材選單選項
+      initDropdownOptions(index, defaultCat);
+    }
+
+    // 🎙️ 客製化選單核心邏輯
+
+    // 關閉所有開啟的選單
+    function closeAllDropdowns() {
+      document.querySelectorAll('.custom-dropdown-menu.open').forEach(menu => {
+        menu.classList.remove('open');
+      });
+    }
+
+    // 初始化下拉選項 (支援滑動與點擊)
+    function initDropdownOptions(index, category) {
+      const listElem = document.getElementById(`dropdownMenu_${index}_list`);
+      listElem.innerHTML = '';
+
+      if (materialData[category] && materialData[category].length > 0) {
+        materialData[category].forEach(fullName => {
+          if (!fullName.includes("---")) {
+            const optElem = document.createElement('div');
+            optElem.className = 'dropdown-option';
+            optElem.innerHTML = fullName;
+            optElem.setAttribute('data-value', fullName);
+            
+            // 點擊選擇資材，支援滑動不觸發點擊，但原生的 touch 行為很複雜，這裡使用 standard onclick
+            optElem.onclick = function() {
+              selectOption(index, fullName);
+            };
+            listElem.appendChild(optElem);
           }
         });
       }
     }
 
+    // 開啟/關閉選單
+    function toggleDropdown(index) {
+      const menu = document.getElementById(`dropdownMenu_${index}`);
+      const isOpen = menu.classList.contains('open');
+      closeAllDropdowns();
+      if (!isOpen) {
+        menu.classList.add('open');
+        // 手動搜尋框清空並對焦
+        document.getElementById(`dropdownMenu_${index}_search`).value = '';
+        filterDropdown(index, ''); // 呈現全部
+      }
+    }
+
+    // 點擊搜尋按鈕，直接彈出選單並對焦選單內搜尋框
+    function focusSearch(index) {
+      const menu = document.getElementById(`dropdownMenu_${index}`);
+      closeAllDropdowns();
+      menu.classList.add('open');
+      const searchBox = document.getElementById(`dropdownMenu_${index}_search`);
+      searchBox.value = '';
+      filterDropdown(index, ''); 
+      searchBox.focus(); // 農民可以馬上開始打字搜尋
+    }
+
+    // 清空選單內的搜尋
+    function clearDropdownSearch(index) {
+      document.getElementById(`dropdownMenu_${index}_search`).value = '';
+      filterDropdown(index, '');
+    }
+
+    // 資材篩選搜尋邏輯
+    function filterDropdown(index, keyword) {
+      const listElem = document.getElementById(`dropdownMenu_${index}_list`);
+      const options = listElem.querySelectorAll('.dropdown-option');
+      let foundCount = 0;
+      const cleanKeyword = keyword.trim().toLowerCase();
+
+      options.forEach(opt => {
+        const val = opt.getAttribute('data-value').toLowerCase();
+        if (cleanKeyword === '' || val.includes(cleanKeyword)) {
+          opt.style.display = 'block';
+          foundCount++;
+        } else {
+          opt.style.display = 'none';
+        }
+      });
+
+      // 呈現查無資料
+      let noRes = listElem.querySelector('.dropdown-no-result');
+      if (foundCount === 0) {
+        if (!noRes) {
+          noRes = document.createElement('div');
+          noRes.className = 'dropdown-no-result';
+          noRes.innerHTML = '查無對應資材';
+          listElem.appendChild(noRes);
+        }
+      } else if (noRes) {
+        noRes.remove();
+      }
+    }
+
+    // 選擇資材
+    function selectOption(index, fullName) {
+      const valueInput = document.getElementById(`itemNameInput_${index}`);
+      const searchBox = document.getElementById(`itemSearchBox_${index}`);
+      
+      valueInput.value = fullName; // 儲存真實值
+      searchBox.value = fullName; // 顯示選取的藥劑
+      searchBox.classList.remove('placeholder');
+      
+      // 更新選取狀態樣式
+      const listElem = document.getElementById(`dropdownMenu_${index}_list`);
+      listElem.querySelectorAll('.dropdown-option.selected').forEach(opt => opt.classList.remove('selected'));
+      const targetOpt = listElem.querySelector(`.dropdown-option[data-value="${fullName}"]`);
+      if (targetOpt) targetOpt.classList.add('selected');
+      
+      closeAllDropdowns(); // 關閉選單
+    }
+
+    // ✕ 一鍵清空簡單框框
+    function clearSimpleInput(targetInputId) {
+      document.getElementById(targetInputId).value = '';
+    }
+
     function switchTab(tab) {
+      closeAllDropdowns();
       if (tab === 'input') {
         document.getElementById('tabInput').style.display = 'block';
         document.getElementById('tabHistory').style.display = 'none';
+        document.getElementById('tabInputBtn').classList.add('active');
+        document.getElementById('tabHistoryBtn').classList.remove('active');
       } else {
         document.getElementById('tabInput').style.display = 'none';
         document.getElementById('tabHistory').style.display = 'block';
+        document.getElementById('tabInputBtn').classList.remove('active');
+        document.getElementById('tabHistoryBtn').classList.add('active');
         loadMyHistory();
       }
     }
@@ -269,32 +434,22 @@
       fetch(`${GAS_API_URL}?action=getMyHistory&userId=${currentUserId}`)
         .then(res => res.json())
         .then(records => {
-          if (!records || records.length === 0) { listDiv.innerHTML = '<p style="text-align:center;">尚無紀錄</p>'; return; }
+          if (!records || records.length === 0) { listDiv.innerHTML = '<p style="text-align:center; padding: 20px;">尚無紀錄</p>'; return; }
           let html = '';
           records.forEach(r => {
             let badge = r.status === '已登錄履歷' ? '<b style="color:green;">✅ 已登產銷履歷</b>' : '<b style="color:orange;">⏳ 審核中</b>';
-            html += `<div style="border-bottom:1px solid #eee; padding:8px 0;">
-              <div style="font-size:12px; color:#777;">📅 ${r.workDate} 【${r.field}】</div>
-              <div style="font-size:15px; font-weight:bold;">${r.action}：${r.detail}</div>
-              <div style="font-size:12px;">狀態：${badge}</div>
+            html += `<div style="border-bottom:1px solid #eee; padding:12px 0;">
+              <div style="font-size:13px; color:#777;">📅 ${r.workDate} 【${r.field}】</div>
+              <div style="font-size:16px; font-weight:bold; color: #333; margin: 4px 0;">${r.action}：${r.detail}</div>
+              <div style="font-size:13px;">狀態：${badge}</div>
             </div>`;
           });
           listDiv.innerHTML = html;
         });
     }
 
-    // ✕ 一鍵清空邏輯與按鈕控制
-    function toggleClear(input) {
-      // 在 style 裡面由 CSS :not(:placeholder-shown) 控制清空按鈕的 visibility
-    }
-
-    function clearInput(btnElem, targetInputId) {
-      const input = document.getElementById(targetInputId);
-      input.value = '';
-      input.focus(); // 清空後焦點保留在該框框
-    }
-
     function submitData() {
+      closeAllDropdowns();
       const workDate = document.getElementById('workDateSelect').value;
       const field = document.getElementById('fieldSelect').value;
       const actionCat = document.getElementById('actionCategorySelect').value;
@@ -308,7 +463,8 @@
 
         if (actionCat.includes("施肥") || actionCat.includes("肥料") || actionCat.includes("土壤")) {
           groups.forEach(group => {
-            const name = group.querySelector('.item-name').value.trim();
+            // 注意：使用 item-hidden-value 框框拿實際資材值
+            const name = group.querySelector('.item-hidden-value').value.trim();
             if (name) {
               const num = group.querySelector('.fertilizer-num').value.trim() || "1";
               const unit = group.querySelector('.fertilizer-unit').value;
@@ -318,7 +474,7 @@
         } else {
           const commonWater = document.getElementById('commonWaterAmount').value.trim() || "0";
           groups.forEach(group => {
-            const name = group.querySelector('.item-name').value.trim();
+            const name = group.querySelector('.item-hidden-value').value.trim();
             if (name) items.push(name);
           });
           if (items.length > 0) {
@@ -326,7 +482,7 @@
           }
         }
 
-        if (items.length === 0) { alert('請選擇或輸入至少一種資材品項！'); return; }
+        if (items.length === 0) { alert('請選擇資材品項（打字或從選單挑選）！'); return; }
         if (!detailString) detailString = items.join(' ; ');
 
       } else {
@@ -335,8 +491,21 @@
         detailString = amount ? `${taskName} [${amount}]` : taskName;
       }
 
+      // 禁用按鈕，防止重複送出
+      const btnSubmit = document.getElementById('btnSubmit');
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '⚡ 正在送出中...';
+
       const recordText = `${currentUserName} | ${workDate} | ${field} | ${actionCat} | ${detailString}`;
-      liff.sendMessages([{ type: 'text', text: recordText }]).then(() => { liff.closeWindow(); });
+      
+      // 模擬延遲或直接送出
+      liff.sendMessages([{ type: 'text', text: recordText }]).then(() => { 
+        liff.closeWindow(); 
+      }).catch(err => {
+        alert('紀錄送出失敗，請重試！');
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '🚀 點擊送出栽培紀錄';
+      });
     }
   </script>
 </body>
