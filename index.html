@@ -16,6 +16,9 @@
     .item-group { background: #f9fbe7; border: 2px dashed #9e9d24; padding: 12px; border-radius: 10px; margin-top: 10px; }
     .btn-add { background: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32; font-weight: bold; margin-top: 12px; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-size: 16px; }
     .btn-submit { background: #2e7d32; color: #fff; border: none; font-weight: bold; margin-top: 24px; font-size: 18px; padding: 14px; border-radius: 10px; width: 100%; box-shadow: 0 4px 8px rgba(46,125,50,0.3); cursor: pointer; }
+    .btn-voice { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; }
+    .btn-voice.recording { background: #ffebee; color: #c62828; border-color: #ef9a9a; animation: pulse 1s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
   </style>
 </head>
 <body>
@@ -50,7 +53,10 @@
     <!-- 一般農事/採收下拉區塊 (非資材作業時顯示) -->
     <div id="generalTaskSection" style="display:none;">
       <select id="generalTaskSelect"></select>
-      <input type="text" id="generalTaskAmount" placeholder="備註/採收數量 (如: 120公斤)，可不填" style="margin-top:6px;" />
+      <div style="margin-top:6px;">
+        <input type="text" id="generalTaskAmount" placeholder="備註/採收數量 (如: 120公斤)，可不填" />
+        <button type="button" class="btn-voice" onclick="startVoiceRecognition('generalTaskAmount', this)">🎤 點我語音輸入採收量/備註</button>
+      </div>
     </div>
 
     <button type="button" class="btn-submit" onclick="submitData()">🚀 點擊送出栽培紀錄</button>
@@ -126,19 +132,17 @@
       const generalTaskSelect = document.getElementById('generalTaskSelect');
       const itemList = document.getElementById('itemList');
 
-      itemList.innerHTML = ''; // 清空舊的資材項目列表
+      itemList.innerHTML = '';
 
       if (actionData[selectedCat] === 'MATERIAL_MENU') {
         materialSection.style.display = 'block';
         generalTaskSection.style.display = 'none';
 
-        // 根據作業種類自動設定類別：施肥選單 vs 用藥選單
         let targetCategory = "農藥";
         if (selectedCat.includes("施肥") || selectedCat.includes("肥料") || selectedCat.includes("土壤")) {
           targetCategory = "肥料";
         }
         
-        // 預設建立第一個資材項目
         addItemGroup(targetCategory);
       } else {
         materialSection.style.display = 'none';
@@ -165,6 +169,9 @@
         }
       }
 
+      const itemIndex = itemList.children.length;
+      const inputId = `input_amount_${itemIndex}`;
+
       const newGroup = document.createElement('div');
       newGroup.className = 'item-group';
       newGroup.setAttribute('data-cat', defaultCat);
@@ -176,9 +183,10 @@
           <div style="margin-top:8px;">
             <label style="margin-top:0; font-size:14px; color:#1b5e20;">🚰 本次噴藥總水量 (公升)：</label>
             <div style="display: flex; align-items: center; gap: 6px;">
-              <input type="number" class="pesticide-water-num" placeholder="輸入水量 (如: 300)" style="flex: 1;" />
+              <input type="number" id="${inputId}" class="pesticide-water-num" placeholder="輸入水量 (如: 300)" style="flex: 1;" />
               <span style="font-weight:bold; color:#1b5e20;">公升</span>
             </div>
+            <button type="button" class="btn-voice" onclick="startVoiceRecognition('${inputId}', this)">🎤 點我用講的輸入水量</button>
           </div>
         `;
       } else {
@@ -188,7 +196,7 @@
           <div style="margin-top:8px;">
             <label style="margin-top:0; font-size:14px; color:#1b5e20;">📦 本次肥料用量：</label>
             <div style="display: flex; gap: 8px;">
-              <input type="number" class="fertilizer-num" placeholder="數量 (如: 2)" style="flex: 2;" />
+              <input type="number" id="${inputId}" class="fertilizer-num" placeholder="數量 (如: 2)" style="flex: 2;" />
               <select class="fertilizer-unit" style="flex: 1;">
                 <option value="包">包</option>
                 <option value="公斤">公斤</option>
@@ -197,21 +205,77 @@
                 <option value="公升">公升</option>
               </select>
             </div>
+            <button type="button" class="btn-voice" onclick="startVoiceRecognition('${inputId}', this)">🎤 點我用講的輸入用量</button>
           </div>
         `;
       }
 
       itemList.appendChild(newGroup);
 
-      // 載入該類別的資材下拉選單選項
       const nameSelect = newGroup.querySelector('.item-name');
       if (materialData[defaultCat] && materialData[defaultCat].length > 0) {
         materialData[defaultCat].forEach(itemFullName => {
           let opt = document.createElement('option');
-          opt.value = itemFullName; opt.innerHTML = itemFullName;
+          opt.value = itemFullName; 
+          opt.innerHTML = itemFullName;
+          // 將無效的分隔線停用
+          if (itemFullName.includes("---")) opt.disabled = true;
           nameSelect.appendChild(opt);
         });
       }
+    }
+
+    // 🎙️ 語音辨識核心邏輯 (Web Speech API)
+    function startVoiceRecognition(targetInputId, btnElem) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (!SpeechRecognition) {
+        alert("您的手機瀏覽器不支援一鍵語音功能，請點擊鍵盤右下角的 🎤 麥克風圖示進行輸入！");
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'zh-TW'; // 設定繁體中文辨識
+      recognition.interimResults = false;
+
+      btnElem.classList.add('recording');
+      btnElem.innerHTML = "🎙️ 正在聆聽中... (請說話)";
+
+      recognition.start();
+
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        const targetInput = document.getElementById(targetInputId);
+        
+        // 如果是數字輸入框，嘗試擷取語音中的數字
+        if (targetInput.type === 'number') {
+          const numMatch = transcript.match(/\d+/);
+          if (numMatch) {
+            targetInput.value = numMatch[0];
+          } else {
+            // 中文數字轉換 (如: 三百 -> 300)
+            targetInput.value = transcript.replace(/[^0-9]/g, '');
+          }
+        } else {
+          targetInput.value = transcript;
+        }
+
+        btnElem.classList.remove('recording');
+        btnElem.innerHTML = "🎤 點我語音輸入";
+      };
+
+      recognition.onerror = function(event) {
+        alert("語音辨識未成功，請重新再試一次。");
+        btnElem.classList.remove('recording');
+        btnElem.innerHTML = "🎤 點我語音輸入";
+      };
+
+      recognition.onend = function() {
+        btnElem.classList.remove('recording');
+        if (btnElem.innerHTML.includes("正在聆聽")) {
+          btnElem.innerHTML = "🎤 點我語音輸入";
+        }
+      };
     }
 
     function switchTab(tab) {
