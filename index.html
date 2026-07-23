@@ -21,11 +21,16 @@
     .btn-submit { background: #2e7d32; color: #fff; border: none; font-weight: bold; margin-top: 24px; font-size: 18px; padding: 14px; border-radius: 10px; width: 100%; box-shadow: 0 4px 8px rgba(46,125,50,0.3); cursor: pointer; }
     .water-box { background: #e0f2f1; border: 2px solid #26a69a; padding: 12px; border-radius: 10px; margin-bottom: 12px; }
     
-    /* 帶有圖示按鈕的輸入框組合 */
-    .input-btn-group { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+    /* 一鍵清空框與挑選按鈕組合樣式 */
+    .input-btn-group { display: flex; gap: 6px; align-items: center; margin-top: 6px; width: 100%; }
+    .clearable-container { position: relative; flex: 1; }
+    .clearable-input { width: 100%; padding: 12px; padding-right: 36px; border-radius: 8px; border: 2px solid #b0bec5; font-size: 17px; background: #fff; box-sizing: border-box; margin-top: 0 !important; }
+    .btn-clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; background: rgba(0,0,0,0.15); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; cursor: pointer; border: none; visibility: hidden; opacity: 0; transition: all 0.15s ease; -webkit-tap-highlight-color: transparent; z-index: 5; }
+    .clearable-input:not(:placeholder-shown) + .btn-clear { visibility: visible; opacity: 1; }
+    
     .btn-pick-list { background: #2e7d32; color: #fff; border: none; padding: 12px 14px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; white-space: nowrap; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
     
-    /* 彈出清單視窗 (Modal) 樣式 - 徹底解決滑動卡頓 */
+    /* 彈出清單視窗 (Modal) 樣式 - 順暢滑動軌道 */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; display: none; justify-content: center; align-items: flex-end; }
     .modal-overlay.open { display: flex; }
     .modal-content { background: #fff; width: 100%; max-width: 600px; height: 80vh; border-radius: 16px 16px 0 0; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; animation: slideUp 0.25s ease-out; }
@@ -36,8 +41,6 @@
     .btn-modal-close { background: #eceff1; border: none; font-size: 20px; font-weight: bold; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; color: #546e7a; }
     
     .modal-search-box { margin: 12px 0; }
-    
-    /* 可獨立順暢滑動的列表區塊 */
     .modal-list-container { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; border-top: 1px solid #f0f0f0; }
     .list-item { padding: 14px 12px; border-bottom: 1px solid #eee; font-size: 16px; cursor: pointer; }
     .list-item:active { background-color: #e8f5e9; color: #2e7d32; font-weight: bold; }
@@ -71,7 +74,10 @@
       <div id="pesticideWaterBox" class="water-box" style="display:none;">
         <label style="margin-top:0; color:#00695c;">🚰 本次噴藥總水量：</label>
         <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
-          <input type="number" id="commonWaterAmount" placeholder="輸入水量 (如: 300)" style="flex: 1;" />
+          <div class="clearable-container">
+            <input type="number" id="commonWaterAmount" placeholder="輸入水量 (如: 300)" class="clearable-input" />
+            <button type="button" class="btn-clear" onclick="clearInput('commonWaterAmount')">✕</button>
+          </div>
           <span style="font-weight:bold; color:#00695c;">公升</span>
         </div>
       </div>
@@ -83,7 +89,10 @@
     <!-- 一般農事/採收下拉區塊 (非資材作業時顯示) -->
     <div id="generalTaskSection" style="display:none;">
       <select id="generalTaskSelect"></select>
-      <input type="text" id="generalTaskAmount" placeholder="備註/採收數量 (如: 120公斤)，可不填" style="margin-top:6px;" />
+      <div class="clearable-container" style="margin-top:6px;">
+        <input type="text" id="generalTaskAmount" placeholder="備註/採收數量 (如: 120公斤)，可不填" class="clearable-input" />
+        <button type="button" class="btn-clear" onclick="clearInput('generalTaskAmount')">✕</button>
+      </div>
     </div>
 
     <button id="btnSubmit" type="button" class="btn-submit" onclick="submitData()">🚀 點擊送出栽培紀錄</button>
@@ -102,7 +111,10 @@
         <button type="button" class="btn-modal-close" onclick="closeMaterialModal()">✕</button>
       </div>
       <div class="modal-search-box">
-        <input type="text" id="modalSearchInput" placeholder="🔍 打字搜尋 (如: 賽)..." oninput="filterModalList(this.value)" />
+        <div class="clearable-container">
+          <input type="text" id="modalSearchInput" placeholder="🔍 打字搜尋 (如: 賽)..." class="clearable-input" oninput="filterModalList(this.value)" />
+          <button type="button" class="btn-clear" onclick="clearModalSearch()">✕</button>
+        </div>
       </div>
       <div id="modalListContainer" class="modal-list-container"></div>
     </div>
@@ -115,7 +127,7 @@
 
     let currentUserId = "", currentUserName = "", actionData = {}, materialData = {};
     let itemGroupCount = 0;
-    let activeTargetInputId = ""; // 記錄當前正在挑選的輸入框 ID
+    let activeTargetInputId = "";
 
     window.onload = function() {
       const today = new Date().toISOString().split('T')[0];
@@ -229,7 +241,10 @@
         newGroup.innerHTML = `
           <label style="margin-top:0; font-size:14px; color:#1b5e20;">🧪 農藥 / 防治資材品項 ${itemList.children.length + 1}：</label>
           <div class="input-btn-group">
-            <input type="text" id="${inputId}" class="item-name" placeholder="輸入關鍵字或點右側挑選" />
+            <div class="clearable-container">
+              <input type="text" id="${inputId}" class="item-name clearable-input" placeholder="輸入關鍵字或點右側挑選" />
+              <button type="button" class="btn-clear" onclick="clearInput('${inputId}')">✕</button>
+            </div>
             <button type="button" class="btn-pick-list" onclick="openMaterialModal('${inputId}', '農藥')">📋 挑選資材</button>
           </div>
         `;
@@ -237,14 +252,20 @@
         newGroup.innerHTML = `
           <label style="margin-top:0; font-size:14px; color:#1b5e20;">🌾 肥料 / 營養劑品項 ${itemList.children.length + 1}：</label>
           <div class="input-btn-group">
-            <input type="text" id="${inputId}" class="item-name" placeholder="輸入關鍵字或點右側挑選" />
+            <div class="clearable-container">
+              <input type="text" id="${inputId}" class="item-name clearable-input" placeholder="輸入關鍵字或點右側挑選" />
+              <button type="button" class="btn-clear" onclick="clearInput('${inputId}')">✕</button>
+            </div>
             <button type="button" class="btn-pick-list" onclick="openMaterialModal('${inputId}', '肥料')">📋 挑選資材</button>
           </div>
 
           <div style="margin-top:8px;">
             <label style="margin-top:0; font-size:14px; color:#1b5e20;">📦 本次肥料用量：</label>
             <div style="display: flex; gap: 8px;">
-              <input type="number" id="${fertilizerNumId}" class="fertilizer-num" placeholder="數量 (如: 2)" style="flex: 2; margin-top:6px;" />
+              <div class="clearable-container" style="flex: 2; margin-top:6px;">
+                <input type="number" id="${fertilizerNumId}" class="fertilizer-num clearable-input" placeholder="數量 (如: 2)" />
+                <button type="button" class="btn-clear" onclick="clearInput('${fertilizerNumId}')">✕</button>
+              </div>
               <select class="fertilizer-unit" style="flex: 1; margin-top: 6px;">
                 <option value="包">包</option>
                 <option value="公斤">公斤</option>
@@ -260,7 +281,21 @@
       itemList.appendChild(newGroup);
     }
 
-    /* 📋 滿版選單 Modal 邏輯 (順暢滑動不卡頓) */
+    // ✕ 一鍵清空通用函式
+    function clearInput(targetInputId) {
+      const elem = document.getElementById(targetInputId);
+      elem.value = '';
+      elem.focus();
+    }
+
+    function clearModalSearch() {
+      const searchElem = document.getElementById('modalSearchInput');
+      searchElem.value = '';
+      filterModalList('');
+      searchElem.focus();
+    }
+
+    /* 📋 滿版選單 Modal 邏輯 */
     function openMaterialModal(targetInputId, category) {
       activeTargetInputId = targetInputId;
       document.getElementById('modalTitle').innerHTML = `📋 請選擇${category}品項`;
@@ -305,7 +340,8 @@
 
     function selectMaterialItem(value) {
       if (activeTargetInputId) {
-        document.getElementById(activeTargetInputId).value = value;
+        const targetInput = document.getElementById(activeTargetInputId);
+        targetInput.value = value;
       }
       closeMaterialModal();
     }
