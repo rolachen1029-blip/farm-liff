@@ -41,44 +41,13 @@
 
     <label style="margin-top:12px;">4. 📝 作業內容 / 資材明細：</label>
 
+    <!-- 資材填寫區塊 -->
     <div id="materialSection">
-      <div id="itemList">
-        <div class="item-group">
-          <label style="margin-top:0; font-size:14px; color:#1b5e20;">1. 資材類別：</label>
-          <select class="item-cat" onchange="onCategoryChange(this)">
-            <option value="農藥">🧪 農藥 / 防治資材</option>
-            <option value="肥料">🌾 肥料 / 營養劑</option>
-          </select>
-
-          <label style="margin-top:8px; font-size:14px; color:#1b5e20;">2. 資材品項 (名稱-品牌-登記字號)：</label>
-          <select class="item-name"><option value="">-- 請選擇資材品項 --</option></select>
-
-          <div class="pesticide-amount-box" style="margin-top:8px;">
-            <label style="margin-top:0; font-size:14px; color:#1b5e20;">3. 🚰 本次噴藥總水量：</label>
-            <select class="pesticide-water">
-              <option value="200公升">200 公升</option>
-              <option value="400公升">400 公升</option>
-              <option value="500公升">500 公升</option>
-              <option value="1000公升">1000 公升 (1噸)</option>
-              <option value="100公升">100 公升</option>
-              <option value="50公升">50 公升</option>
-            </select>
-          </div>
-
-          <div class="fertilizer-amount-box" style="margin-top:8px; display:none;">
-            <label style="margin-top:0; font-size:14px; color:#1b5e20;">3. 📦 本次肥料用量：</label>
-            <div style="display: flex; gap: 8px;">
-              <input type="text" class="fertilizer-num" placeholder="數量 (如: 2)" style="flex: 2;" />
-              <select class="fertilizer-unit" style="flex: 1;">
-                <option value="包">包</option><option value="公斤">公斤</option><option value="瓶">瓶</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-      <button type="button" class="btn-add" onclick="addItemGroup()">➕ 增加一種混藥 / 其他資材</button>
+      <div id="itemList"></div>
+      <button type="button" class="btn-add" id="btnAddItemGroup" onclick="addItemGroup()">➕ 增加一種資材/混藥</button>
     </div>
 
+    <!-- 一般農事/採收下拉區塊 (非資材作業時顯示) -->
     <div id="generalTaskSection" style="display:none;">
       <select id="generalTaskSelect"></select>
       <input type="text" id="generalTaskAmount" placeholder="備註/採收數量 (如: 120公斤)，可不填" style="margin-top:6px;" />
@@ -144,11 +113,9 @@
             opt.value = cat; opt.innerHTML = cat;
             actionSelect.appendChild(opt);
           }
-          onActionCategoryChange();
 
           materialData = data.pesticides || {};
-          const firstCat = document.querySelector('.item-cat');
-          if (firstCat) onCategoryChange(firstCat);
+          onActionCategoryChange();
         });
     }
 
@@ -157,10 +124,22 @@
       const materialSection = document.getElementById('materialSection');
       const generalTaskSection = document.getElementById('generalTaskSection');
       const generalTaskSelect = document.getElementById('generalTaskSelect');
+      const itemList = document.getElementById('itemList');
+
+      itemList.innerHTML = ''; // 清空舊的資材項目列表
 
       if (actionData[selectedCat] === 'MATERIAL_MENU') {
         materialSection.style.display = 'block';
         generalTaskSection.style.display = 'none';
+
+        // 根據作業種類自動設定類別：施肥選單 vs 用藥選單
+        let targetCategory = "農藥";
+        if (selectedCat.includes("施肥") || selectedCat.includes("肥料") || selectedCat.includes("土壤")) {
+          targetCategory = "肥料";
+        }
+        
+        // 預設建立第一個資材項目
+        addItemGroup(targetCategory);
       } else {
         materialSection.style.display = 'none';
         generalTaskSection.style.display = 'block';
@@ -175,65 +154,64 @@
       }
     }
 
-    function onCategoryChange(catSelectElem) {
-      const category = catSelectElem.value;
-      const group = catSelectElem.parentElement;
-      const nameSelect = group.querySelector('.item-name');
-      const pesticideBox = group.querySelector('.pesticide-amount-box');
-      const fertilizerBox = group.querySelector('.fertilizer-amount-box');
+    function addItemGroup(forcedCategory) {
+      const itemList = document.getElementById('itemList');
+      const selectedCat = document.getElementById('actionCategorySelect').value;
+      
+      let defaultCat = forcedCategory || "農藥";
+      if (!forcedCategory) {
+        if (selectedCat.includes("施肥") || selectedCat.includes("肥料") || selectedCat.includes("土壤")) {
+          defaultCat = "肥料";
+        }
+      }
 
-      nameSelect.innerHTML = '<option value="">-- 請選擇資材品項 --</option>';
+      const newGroup = document.createElement('div');
+      newGroup.className = 'item-group';
+      newGroup.setAttribute('data-cat', defaultCat);
 
-      if (materialData[category] && materialData[category].length > 0) {
-        materialData[category].forEach(itemFullName => {
+      if (defaultCat === '農藥') {
+        newGroup.innerHTML = `
+          <label style="margin-top:0; font-size:14px; color:#1b5e20;">🧪 農藥 / 防治資材品項：</label>
+          <select class="item-name" style="margin-top:6px;"><option value="">-- 請選擇資材品項 --</option></select>
+          <div style="margin-top:8px;">
+            <label style="margin-top:0; font-size:14px; color:#1b5e20;">🚰 本次噴藥總水量 (公升)：</label>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <input type="number" class="pesticide-water-num" placeholder="輸入水量 (如: 300)" style="flex: 1;" />
+              <span style="font-weight:bold; color:#1b5e20;">公升</span>
+            </div>
+          </div>
+        `;
+      } else {
+        newGroup.innerHTML = `
+          <label style="margin-top:0; font-size:14px; color:#1b5e20;">🌾 肥料 / 營養劑品項：</label>
+          <select class="item-name" style="margin-top:6px;"><option value="">-- 請選擇資材品項 --</option></select>
+          <div style="margin-top:8px;">
+            <label style="margin-top:0; font-size:14px; color:#1b5e20;">📦 本次肥料用量：</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="number" class="fertilizer-num" placeholder="數量 (如: 2)" style="flex: 2;" />
+              <select class="fertilizer-unit" style="flex: 1;">
+                <option value="包">包</option>
+                <option value="公斤">公斤</option>
+                <option value="瓶">瓶</option>
+                <option value="罐">罐</option>
+                <option value="公升">公升</option>
+              </select>
+            </div>
+          </div>
+        `;
+      }
+
+      itemList.appendChild(newGroup);
+
+      // 載入該類別的資材下拉選單選項
+      const nameSelect = newGroup.querySelector('.item-name');
+      if (materialData[defaultCat] && materialData[defaultCat].length > 0) {
+        materialData[defaultCat].forEach(itemFullName => {
           let opt = document.createElement('option');
           opt.value = itemFullName; opt.innerHTML = itemFullName;
           nameSelect.appendChild(opt);
         });
       }
-
-      if (category === '農藥') {
-        pesticideBox.style.display = 'block';
-        fertilizerBox.style.display = 'none';
-      } else {
-        pesticideBox.style.display = 'none';
-        fertilizerBox.style.display = 'block';
-      }
-    }
-
-    function addItemGroup() {
-      const itemList = document.getElementById('itemList');
-      const newGroup = document.createElement('div');
-      newGroup.className = 'item-group';
-      newGroup.style.marginTop = '10px';
-      newGroup.innerHTML = `
-        <label style="margin-top:0; font-size:14px; color:#1b5e20;">1. 資材類別：</label>
-        <select class="item-cat" onchange="onCategoryChange(this)">
-          <option value="農藥">🧪 農藥 / 防治資材</option>
-          <option value="肥料">🌾 肥料 / 營養劑</option>
-        </select>
-        <select class="item-name" style="margin-top:6px;"><option value="">-- 請選擇資材品項 --</option></select>
-        <div class="pesticide-amount-box" style="margin-top:8px;">
-          <select class="pesticide-water">
-            <option value="200公升">200 公升</option>
-            <option value="400公升">400 公升</option>
-            <option value="500公升">500 公升</option>
-            <option value="1000公升">1000 公升 (1噸)</option>
-            <option value="100公升">100 公升</option>
-            <option value="50公升">50 公升</option>
-          </select>
-        </div>
-        <div class="fertilizer-amount-box" style="margin-top:8px; display:none;">
-          <div style="display: flex; gap: 8px;">
-            <input type="text" class="fertilizer-num" placeholder="數量 (如: 2)" style="flex: 2;" />
-            <select class="fertilizer-unit" style="flex: 1;">
-              <option value="包">包</option><option value="公斤">公斤</option><option value="瓶">瓶</option>
-            </select>
-          </div>
-        </div>
-      `;
-      itemList.appendChild(newGroup);
-      onCategoryChange(newGroup.querySelector('.item-cat'));
     }
 
     function switchTab(tab) {
@@ -279,12 +257,12 @@
         const groups = document.querySelectorAll('.item-group');
         let items = [];
         groups.forEach(group => {
-          const cat = group.querySelector('.item-cat').value;
+          const cat = group.getAttribute('data-cat');
           const name = group.querySelector('.item-name').value;
           if (name) {
             if (cat === '農藥') {
-              const water = group.querySelector('.pesticide-water').value;
-              items.push(`${name} [水量: ${water}]`);
+              const water = group.querySelector('.pesticide-water-num').value.trim() || "0";
+              items.push(`${name} [水量: ${water}公升]`);
             } else {
               const num = group.querySelector('.fertilizer-num').value.trim() || "1";
               const unit = group.querySelector('.fertilizer-unit').value;
