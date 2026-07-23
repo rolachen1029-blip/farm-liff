@@ -16,6 +16,7 @@
     .item-group { background: #f9fbe7; border: 2px dashed #9e9d24; padding: 12px; border-radius: 10px; margin-top: 10px; }
     .btn-add { background: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32; font-weight: bold; margin-top: 12px; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-size: 16px; }
     .btn-submit { background: #2e7d32; color: #fff; border: none; font-weight: bold; margin-top: 24px; font-size: 18px; padding: 14px; border-radius: 10px; width: 100%; box-shadow: 0 4px 8px rgba(46,125,50,0.3); cursor: pointer; }
+    .water-box { background: #e0f2f1; border: 2px solid #26a69a; padding: 12px; border-radius: 10px; margin-bottom: 12px; }
   </style>
 </head>
 <body>
@@ -43,6 +44,15 @@
 
     <!-- 資材填寫區塊 -->
     <div id="materialSection">
+      <!-- 噴藥專用的共用總水量輸入框 -->
+      <div id="pesticideWaterBox" class="water-box" style="display:none;">
+        <label style="margin-top:0; color:#00695c;">🚰 本次噴藥總水量：</label>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <input type="number" id="commonWaterAmount" placeholder="輸入總水量 (如: 300)" style="flex: 1;" />
+          <span style="font-weight:bold; color:#00695c;">公升</span>
+        </div>
+      </div>
+
       <div id="itemList"></div>
       <button type="button" class="btn-add" id="btnAddItemGroup" onclick="addItemGroup()">➕ 增加一種資材/混藥</button>
     </div>
@@ -124,6 +134,7 @@
       const materialSection = document.getElementById('materialSection');
       const generalTaskSection = document.getElementById('generalTaskSection');
       const generalTaskSelect = document.getElementById('generalTaskSelect');
+      const pesticideWaterBox = document.getElementById('pesticideWaterBox');
       const itemList = document.getElementById('itemList');
 
       itemList.innerHTML = '';
@@ -135,12 +146,16 @@
         let targetCategory = "農藥";
         if (selectedCat.includes("施肥") || selectedCat.includes("肥料") || selectedCat.includes("土壤")) {
           targetCategory = "肥料";
+          pesticideWaterBox.style.display = 'none'; // 施肥不顯示共用水量框
+        } else {
+          pesticideWaterBox.style.display = 'block'; // 用藥時顯示共用總水量框
         }
         
         addItemGroup(targetCategory);
       } else {
         materialSection.style.display = 'none';
         generalTaskSection.style.display = 'block';
+        pesticideWaterBox.style.display = 'none';
         generalTaskSelect.innerHTML = '';
         if (Array.isArray(actionData[selectedCat])) {
           actionData[selectedCat].forEach(task => {
@@ -163,7 +178,6 @@
         }
       }
 
-      // 為每個資材生成獨一無二的 datalist ID
       const groupIndex = itemList.children.length;
       const listId = `datalist_${defaultCat}_${groupIndex}`;
 
@@ -173,21 +187,13 @@
 
       if (defaultCat === '農藥') {
         newGroup.innerHTML = `
-          <label style="margin-top:0; font-size:14px; color:#1b5e20;">🧪 農藥 / 防治資材品項 (可打字搜尋)：</label>
+          <label style="margin-top:0; font-size:14px; color:#1b5e20;">🧪 農藥 / 防治資材品項 ${groupIndex + 1}：</label>
           <input type="text" class="item-name" list="${listId}" placeholder="🔍 請輸入關鍵字 (如: 賽) 或點擊選擇" style="margin-top:6px;" />
           <datalist id="${listId}"></datalist>
-          
-          <div style="margin-top:8px;">
-            <label style="margin-top:0; font-size:14px; color:#1b5e20;">🚰 本次噴藥總水量 (公升)：</label>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <input type="number" class="pesticide-water-num" placeholder="輸入水量 (如: 300)" style="flex: 1;" />
-              <span style="font-weight:bold; color:#1b5e20;">公升</span>
-            </div>
-          </div>
         `;
       } else {
         newGroup.innerHTML = `
-          <label style="margin-top:0; font-size:14px; color:#1b5e20;">🌾 肥料 / 營養劑品項 (可打字搜尋)：</label>
+          <label style="margin-top:0; font-size:14px; color:#1b5e20;">🌾 肥料 / 營養劑品項 ${groupIndex + 1}：</label>
           <input type="text" class="item-name" list="${listId}" placeholder="🔍 請輸入關鍵字或點擊選擇" style="margin-top:6px;" />
           <datalist id="${listId}"></datalist>
 
@@ -209,11 +215,9 @@
 
       itemList.appendChild(newGroup);
 
-      // 載入資材選單至對應的 datalist
       const dataListElem = newGroup.querySelector(`#${listId}`);
       if (materialData[defaultCat] && materialData[defaultCat].length > 0) {
         materialData[defaultCat].forEach(itemFullName => {
-          // 避開分隔線
           if (!itemFullName.includes("---")) {
             let opt = document.createElement('option');
             opt.value = itemFullName;
@@ -265,22 +269,35 @@
       if (actionData[actionCat] === 'MATERIAL_MENU') {
         const groups = document.querySelectorAll('.item-group');
         let items = [];
-        groups.forEach(group => {
-          const cat = group.getAttribute('data-cat');
-          const name = group.querySelector('.item-name').value.trim();
-          if (name) {
-            if (cat === '農藥') {
-              const water = group.querySelector('.pesticide-water-num').value.trim() || "0";
-              items.push(`${name} [水量: ${water}公升]`);
-            } else {
+
+        if (actionCat.includes("施肥") || actionCat.includes("肥料") || actionCat.includes("土壤")) {
+          // 施肥邏輯：個別紀錄肥料用量與單位
+          groups.forEach(group => {
+            const name = group.querySelector('.item-name').value.trim();
+            if (name) {
               const num = group.querySelector('.fertilizer-num').value.trim() || "1";
               const unit = group.querySelector('.fertilizer-unit').value;
               items.push(`${name} [用量: ${num} ${unit}]`);
             }
+          });
+        } else {
+          // 用藥邏輯：共用最上方的總水量
+          const commonWater = document.getElementById('commonWaterAmount').value.trim() || "0";
+          groups.forEach(group => {
+            const name = group.querySelector('.item-name').value.trim();
+            if (name) {
+              items.push(name);
+            }
+          });
+          if (items.length > 0) {
+            // 格式整理為: 藥劑A ; 藥劑B ; 藥劑C [總水量: 300公升]
+            detailString = `${items.join(' ; ')} [總水量: ${commonWater}公升]`;
           }
-        });
+        }
+
         if (items.length === 0) { alert('請選擇或輸入至少一種資材品項！'); return; }
-        detailString = items.join(' ; ');
+        if (!detailString) detailString = items.join(' ; ');
+
       } else {
         const taskName = document.getElementById('generalTaskSelect').value;
         const amount = document.getElementById('generalTaskAmount').value.trim();
