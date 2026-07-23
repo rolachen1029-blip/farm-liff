@@ -12,11 +12,18 @@
     .card { background: #fff; padding: 20px; margin: 12px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     .user-badge { background: #e8f5e9; color: #1b5e20; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 16px; display: inline-block; margin-bottom: 12px; border: 1px solid #c8e6c9; }
     label { font-weight: bold; margin-top: 16px; display: block; color: #1b5e20; font-size: 17px; }
-    select, input { width: 100%; padding: 12px; margin-top: 6px; border-radius: 8px; border: 2px solid #b0bec5; font-size: 17px; background: #fff; box-sizing: border-box; }
+    select, input[type="date"], input[type="number"] { width: 100%; padding: 12px; margin-top: 6px; border-radius: 8px; border: 2px solid #b0bec5; font-size: 17px; background: #fff; box-sizing: border-box; }
     .item-group { background: #f9fbe7; border: 2px dashed #9e9d24; padding: 12px; border-radius: 10px; margin-top: 10px; }
     .btn-add { background: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32; font-weight: bold; margin-top: 12px; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-size: 16px; }
     .btn-submit { background: #2e7d32; color: #fff; border: none; font-weight: bold; margin-top: 24px; font-size: 18px; padding: 14px; border-radius: 10px; width: 100%; box-shadow: 0 4px 8px rgba(46,125,50,0.3); cursor: pointer; }
     .water-box { background: #e0f2f1; border: 2px solid #26a69a; padding: 12px; border-radius: 10px; margin-bottom: 12px; }
+    
+    /* 一鍵清空按鈕相關樣式 */
+    .clearable-container { position: relative; width: 100%; margin-top: 6px; }
+    .clearable-input { width: 100%; padding: 12px; padding-right: 40px; border-radius: 8px; border: 2px solid #b0bec5; font-size: 17px; background: #fff; box-sizing: border-box; }
+    .btn-clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; background: rgba(0,0,0,0.1); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; cursor: pointer; border: none; visibility: hidden; opacity: 0; transition: visibility 0s, opacity 0.2s linear; -webkit-tap-highlight-color: transparent; }
+    .clearable-input:not(:placeholder-shown) + .btn-clear { visibility: visible; opacity: 1; }
+    .clearable-input::-ms-clear, .clearable-input::-webkit-search-cancel-button { display: none; }
   </style>
 </head>
 <body>
@@ -48,7 +55,11 @@
       <div id="pesticideWaterBox" class="water-box" style="display:none;">
         <label style="margin-top:0; color:#00695c;">🚰 本次噴藥總水量：</label>
         <div style="display: flex; align-items: center; gap: 6px;">
-          <input type="number" id="commonWaterAmount" placeholder="輸入總水量 (如: 300)" style="flex: 1;" />
+          <!-- 使用 number input 並加上清空按鈕容器 -->
+          <div class="clearable-container">
+            <input type="number" id="commonWaterAmount" placeholder="輸入總水量 (如: 300)" class="clearable-input" oninput="toggleClear(this)" />
+            <button type="button" class="btn-clear" onclick="clearInput(this, 'commonWaterAmount')">✕</button>
+          </div>
           <span style="font-weight:bold; color:#00695c;">公升</span>
         </div>
       </div>
@@ -60,7 +71,10 @@
     <!-- 一般農事/採收下拉區塊 (非資材作業時顯示) -->
     <div id="generalTaskSection" style="display:none;">
       <select id="generalTaskSelect"></select>
-      <input type="text" id="generalTaskAmount" placeholder="備註/採收數量 (如: 120公斤)，可不填" style="margin-top:6px;" />
+      <div class="clearable-container" style="margin-top:6px;">
+        <input type="text" id="generalTaskAmount" placeholder="備註/採收數量 (如: 120公斤)，可不填" class="clearable-input" oninput="toggleClear(this)" />
+        <button type="button" class="btn-clear" onclick="clearInput(this, 'generalTaskAmount')">✕</button>
+      </div>
     </div>
 
     <button type="button" class="btn-submit" onclick="submitData()">🚀 點擊送出栽培紀錄</button>
@@ -146,9 +160,9 @@
         let targetCategory = "農藥";
         if (selectedCat.includes("施肥") || selectedCat.includes("肥料") || selectedCat.includes("土壤")) {
           targetCategory = "肥料";
-          pesticideWaterBox.style.display = 'none'; // 施肥不顯示共用水量框
+          pesticideWaterBox.style.display = 'none';
         } else {
-          pesticideWaterBox.style.display = 'block'; // 用藥時顯示共用總水量框
+          pesticideWaterBox.style.display = 'block';
         }
         
         addItemGroup(targetCategory);
@@ -180,6 +194,8 @@
 
       const groupIndex = itemList.children.length;
       const listId = `datalist_${defaultCat}_${groupIndex}`;
+      const inputId = `item_name_${defaultCat}_${groupIndex}`; // 獨一無二的輸入框 ID
+      const fertilizerNumId = `fertilizer_num_${groupIndex}`; // 施肥用量 ID
 
       const newGroup = document.createElement('div');
       newGroup.className = 'item-group';
@@ -188,20 +204,29 @@
       if (defaultCat === '農藥') {
         newGroup.innerHTML = `
           <label style="margin-top:0; font-size:14px; color:#1b5e20;">🧪 農藥 / 防治資材品項 ${groupIndex + 1}：</label>
-          <input type="text" class="item-name" list="${listId}" placeholder="🔍 請輸入關鍵字 (如: 賽) 或點擊選擇" style="margin-top:6px;" />
+          <div class="clearable-container">
+            <input type="text" id="${inputId}" class="item-name clearable-input" list="${listId}" placeholder="🔍 輸入關鍵字搜尋或點擊選擇" oninput="toggleClear(this)" />
+            <button type="button" class="btn-clear" onclick="clearInput(this, '${inputId}')">✕</button>
+          </div>
           <datalist id="${listId}"></datalist>
         `;
       } else {
         newGroup.innerHTML = `
           <label style="margin-top:0; font-size:14px; color:#1b5e20;">🌾 肥料 / 營養劑品項 ${groupIndex + 1}：</label>
-          <input type="text" class="item-name" list="${listId}" placeholder="🔍 請輸入關鍵字或點擊選擇" style="margin-top:6px;" />
+          <div class="clearable-container">
+            <input type="text" id="${inputId}" class="item-name clearable-input" list="${listId}" placeholder="🔍 輸入關鍵字搜尋或點擊選擇" oninput="toggleClear(this)" />
+            <button type="button" class="btn-clear" onclick="clearInput(this, '${inputId}')">✕</button>
+          </div>
           <datalist id="${listId}"></datalist>
 
           <div style="margin-top:8px;">
             <label style="margin-top:0; font-size:14px; color:#1b5e20;">📦 本次肥料用量：</label>
             <div style="display: flex; gap: 8px;">
-              <input type="number" class="fertilizer-num" placeholder="數量 (如: 2)" style="flex: 2;" />
-              <select class="fertilizer-unit" style="flex: 1;">
+              <div class="clearable-container" style="flex: 2;">
+                <input type="number" id="${fertilizerNumId}" class="fertilizer-num clearable-input" placeholder="數量 (如: 2)" oninput="toggleClear(this)" />
+                <button type="button" class="btn-clear" onclick="clearInput(this, '${fertilizerNumId}')">✕</button>
+              </div>
+              <select class="fertilizer-unit" style="flex: 1; margin-top: 6px;">
                 <option value="包">包</option>
                 <option value="公斤">公斤</option>
                 <option value="瓶">瓶</option>
@@ -258,6 +283,17 @@
         });
     }
 
+    // ✕ 一鍵清空邏輯與按鈕控制
+    function toggleClear(input) {
+      // 在 style 裡面由 CSS :not(:placeholder-shown) 控制清空按鈕的 visibility
+    }
+
+    function clearInput(btnElem, targetInputId) {
+      const input = document.getElementById(targetInputId);
+      input.value = '';
+      input.focus(); // 清空後焦點保留在該框框
+    }
+
     function submitData() {
       const workDate = document.getElementById('workDateSelect').value;
       const field = document.getElementById('fieldSelect').value;
@@ -271,7 +307,6 @@
         let items = [];
 
         if (actionCat.includes("施肥") || actionCat.includes("肥料") || actionCat.includes("土壤")) {
-          // 施肥邏輯：個別紀錄肥料用量與單位
           groups.forEach(group => {
             const name = group.querySelector('.item-name').value.trim();
             if (name) {
@@ -281,16 +316,12 @@
             }
           });
         } else {
-          // 用藥邏輯：共用最上方的總水量
           const commonWater = document.getElementById('commonWaterAmount').value.trim() || "0";
           groups.forEach(group => {
             const name = group.querySelector('.item-name').value.trim();
-            if (name) {
-              items.push(name);
-            }
+            if (name) items.push(name);
           });
           if (items.length > 0) {
-            // 格式整理為: 藥劑A ; 藥劑B ; 藥劑C [總水量: 300公升]
             detailString = `${items.join(' ; ')} [總水量: ${commonWater}公升]`;
           }
         }
