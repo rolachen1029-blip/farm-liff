@@ -163,14 +163,20 @@
         }
       }
 
+      // 為每個資材生成獨一無二的 datalist ID
+      const groupIndex = itemList.children.length;
+      const listId = `datalist_${defaultCat}_${groupIndex}`;
+
       const newGroup = document.createElement('div');
       newGroup.className = 'item-group';
       newGroup.setAttribute('data-cat', defaultCat);
 
       if (defaultCat === '農藥') {
         newGroup.innerHTML = `
-          <label style="margin-top:0; font-size:14px; color:#1b5e20;">🧪 農藥 / 防治資材品項：</label>
-          <select class="item-name" style="margin-top:6px;"><option value="">-- 請選擇資材品項 --</option></select>
+          <label style="margin-top:0; font-size:14px; color:#1b5e20;">🧪 農藥 / 防治資材品項 (可打字搜尋)：</label>
+          <input type="text" class="item-name" list="${listId}" placeholder="🔍 請輸入關鍵字 (如: 賽) 或點擊選擇" style="margin-top:6px;" />
+          <datalist id="${listId}"></datalist>
+          
           <div style="margin-top:8px;">
             <label style="margin-top:0; font-size:14px; color:#1b5e20;">🚰 本次噴藥總水量 (公升)：</label>
             <div style="display: flex; align-items: center; gap: 6px;">
@@ -181,8 +187,10 @@
         `;
       } else {
         newGroup.innerHTML = `
-          <label style="margin-top:0; font-size:14px; color:#1b5e20;">🌾 肥料 / 營養劑品項：</label>
-          <select class="item-name" style="margin-top:6px;"><option value="">-- 請選擇資材品項 --</option></select>
+          <label style="margin-top:0; font-size:14px; color:#1b5e20;">🌾 肥料 / 營養劑品項 (可打字搜尋)：</label>
+          <input type="text" class="item-name" list="${listId}" placeholder="🔍 請輸入關鍵字或點擊選擇" style="margin-top:6px;" />
+          <datalist id="${listId}"></datalist>
+
           <div style="margin-top:8px;">
             <label style="margin-top:0; font-size:14px; color:#1b5e20;">📦 本次肥料用量：</label>
             <div style="display: flex; gap: 8px;">
@@ -201,14 +209,16 @@
 
       itemList.appendChild(newGroup);
 
-      const nameSelect = newGroup.querySelector('.item-name');
+      // 載入資材選單至對應的 datalist
+      const dataListElem = newGroup.querySelector(`#${listId}`);
       if (materialData[defaultCat] && materialData[defaultCat].length > 0) {
         materialData[defaultCat].forEach(itemFullName => {
-          let opt = document.createElement('option');
-          opt.value = itemFullName; 
-          opt.innerHTML = itemFullName;
-          if (itemFullName.includes("---")) opt.disabled = true;
-          nameSelect.appendChild(opt);
+          // 避開分隔線
+          if (!itemFullName.includes("---")) {
+            let opt = document.createElement('option');
+            opt.value = itemFullName;
+            dataListElem.appendChild(opt);
+          }
         });
       }
     }
@@ -257,7 +267,7 @@
         let items = [];
         groups.forEach(group => {
           const cat = group.getAttribute('data-cat');
-          const name = group.querySelector('.item-name').value;
+          const name = group.querySelector('.item-name').value.trim();
           if (name) {
             if (cat === '農藥') {
               const water = group.querySelector('.pesticide-water-num').value.trim() || "0";
@@ -269,7 +279,7 @@
             }
           }
         });
-        if (items.length === 0) { alert('請選擇至少一種資材品項！'); return; }
+        if (items.length === 0) { alert('請選擇或輸入至少一種資材品項！'); return; }
         detailString = items.join(' ; ');
       } else {
         const taskName = document.getElementById('generalTaskSelect').value;
