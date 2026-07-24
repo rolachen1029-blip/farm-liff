@@ -8,50 +8,46 @@
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #1e272e; color: #fff; margin: 0; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; min-height: 100vh; }
     
     /* 計算機液晶螢幕風格 */
-    .screen { background: #2f3640; border: 3px solid #485460; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.5); }
-    .screen-box { background: #353b48; border: 2px solid #57606f; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s; }
-    .screen-box.active { border-color: #00d2d3; background: #1e272e; box-shadow: 0 0 8px rgba(0,210,211,0.5); }
+    .screen { background: #2f3640; border: 3px solid #485460; border-radius: 12px; padding: 14px; margin-bottom: 12px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.5); }
     
-    .screen-title { font-size: 15px; color: #dcdde1; font-weight: bold; }
-    .screen-val { font-size: 24px; font-weight: bold; color: #00d2d3; font-family: 'Courier New', monospace; }
+    /* 大字輸入框（可直接點擊選擇） */
+    .screen-box { background: #353b48; border: 2px solid #57606f; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
+    .screen-box.active { border-color: #00d2d3; background: #182c39; box-shadow: 0 0 12px rgba(0,210,211,0.6); }
+    
+    .screen-title { font-size: 16px; color: #dcdde1; font-weight: bold; }
+    .screen-val { font-size: 26px; font-weight: bold; color: #00d2d3; font-family: 'Courier New', monospace; }
     
     /* 計算結果大字區 */
-    .result-box { background: #0f2027; border: 2px solid #10ac84; border-radius: 8px; padding: 12px; text-align: center; margin-top: 8px; }
-    .result-title { font-size: 14px; color: #10ac84; font-weight: bold; }
-    .result-num { font-size: 38px; font-weight: 900; color: #1dd1a1; font-family: 'Courier New', monospace; text-shadow: 0 0 10px rgba(29,209,161,0.3); }
-
-    /* 模式提示欄 */
-    .status-bar { font-size: 14px; font-weight: bold; color: #ff9f43; margin: 6px 0 10px 0; text-align: center; background: rgba(255,159,67,0.1); padding: 6px; border-radius: 6px; border: 1px dashed #ff9f43; }
+    .result-box { background: #0f2027; border: 2px solid #10ac84; border-radius: 10px; padding: 14px; text-align: center; margin-top: 6px; }
+    .result-title { font-size: 15px; color: #10ac84; font-weight: bold; }
+    .result-num { font-size: 42px; font-weight: 900; color: #1dd1a1; font-family: 'Courier New', monospace; text-shadow: 0 0 10px rgba(29,209,161,0.3); }
 
     /* 網格按鈕排版 */
-    .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; flex: 1; }
+    .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
     
     /* 大按鈕通用樣式 */
-    .btn { background: #353b48; color: #f5f6fa; border: none; padding: 16px 0; border-radius: 10px; font-size: 22px; font-weight: bold; cursor: pointer; box-shadow: 0 4px #2f3640; -webkit-tap-highlight-color: transparent; }
+    .btn { background: #353b48; color: #f5f6fa; border: none; padding: 18px 0; border-radius: 12px; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 4px #2f3640; -webkit-tap-highlight-color: transparent; }
     .btn:active { transform: translateY(3px); box-shadow: 0 1px #2f3640; }
     
     /* 數字鍵盤 */
     .btn-num { background: #485460; color: #fff; box-shadow: 0 4px #2f3640; }
 
     /* 功能鍵 (歸零 C、退格 ⌫) */
-    .btn-clear { background: #ee5253; color: #fff; box-shadow: 0 4px #c8d6e5; font-size: 18px; }
-    .btn-backspace { background: #ff9f43; color: #fff; box-shadow: 0 4px #e67e22; font-size: 18px; }
-    
-    /* 切換目標按鈕 */
-    .btn-switch { background: #0984e3; color: #fff; box-shadow: 0 4px #74b9ff; font-size: 16px; grid-column: span 3; padding: 12px 0; }
+    .btn-clear { background: #ee5253; color: #fff; box-shadow: 0 4px #c8d6e5; font-size: 20px; }
+    .btn-backspace { background: #ff9f43; color: #fff; box-shadow: 0 4px #e67e22; font-size: 20px; }
   </style>
 </head>
 <body>
 
   <!-- 📟 液晶顯示螢幕 -->
   <div class="screen">
-    <!-- 水量顯示列（可點擊切換輸入） -->
+    <!-- 水量輸入框 (點擊直接切換) -->
     <div id="boxWater" class="screen-box active" onclick="setMode('water')">
       <span class="screen-title">🚰 噴藥總水量：</span>
       <span id="dispWater" class="screen-val">0 公升</span>
     </div>
 
-    <!-- 倍數顯示列（可點擊切換輸入） -->
+    <!-- 倍數輸入框 (點擊直接切換) -->
     <div id="boxRatio" class="screen-box" onclick="setMode('ratio')">
       <span class="screen-title">🧪 稀釋倍數：</span>
       <span id="dispRatio" class="screen-val">0 倍</span>
@@ -63,9 +59,6 @@
       <div id="dispResult" class="result-num">0 cc</div>
     </div>
   </div>
-
-  <!-- 💡 當前正在輸入項目提示 -->
-  <div id="statusBar" class="status-bar">👇 請用下方鍵盤輸入：【🚰 噴藥總水量】</div>
 
   <!-- 🔢 數字大按鍵區 -->
   <div class="btn-grid">
@@ -84,8 +77,6 @@
     <button class="btn btn-clear" onclick="clearCurrent()">C 清空</button>
     <button class="btn btn-num" onclick="pressNum(0)">0</button>
     <button class="btn btn-backspace" onclick="backspace()">⌫ 刪除</button>
-
-    <button id="btnSwitch" class="btn btn-switch" onclick="toggleMode()">➡️ 切換至輸入【🧪 稀釋倍數】</button>
   </div>
 
   <script>
@@ -98,27 +89,16 @@
       updateUI();
     }
 
-    function toggleMode() {
-      currentMode = currentMode === 'water' ? 'ratio' : 'water';
-      updateUI();
-    }
-
     function updateUI() {
       const boxWater = document.getElementById('boxWater');
       const boxRatio = document.getElementById('boxRatio');
-      const statusBar = document.getElementById('statusBar');
-      const btnSwitch = document.getElementById('btnSwitch');
 
       if (currentMode === 'water') {
         boxWater.classList.add('active');
         boxRatio.classList.remove('active');
-        statusBar.innerHTML = '👇 請用下方鍵盤輸入：【🚰 噴藥總水量】';
-        btnSwitch.innerHTML = '➡️ 切換至輸入【🧪 稀釋倍數】';
       } else {
         boxWater.classList.remove('active');
         boxRatio.classList.add('active');
-        statusBar.innerHTML = '👇 請用下方鍵盤輸入：【🧪 稀釋倍數】';
-        btnSwitch.innerHTML = '➡️ 切換至輸入【🚰 噴藥總水量】';
       }
     }
 
