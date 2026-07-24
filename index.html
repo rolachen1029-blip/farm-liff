@@ -30,7 +30,7 @@
     
     .btn-pick-list { background: #2e7d32; color: #fff; border: none; padding: 12px 14px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; white-space: nowrap; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
     
-    /* 彈出清單視窗 (Modal) 樣式 - 順暢滑動軌道 */
+    /* 彈出清單視窗 (Modal) 樣式 */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; display: none; justify-content: center; align-items: flex-end; }
     .modal-overlay.open { display: flex; }
     .modal-content { background: #fff; width: 100%; max-width: 600px; height: 80vh; border-radius: 16px 16px 0 0; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; animation: slideUp 0.25s ease-out; }
@@ -48,22 +48,22 @@
 </head>
 <body>
 
-  <!-- 頂端身份狀態欄 -->
-<div id="userBar" style="background: #e8f5e9; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-weight: bold; color: #2e7d32;">
-  👤 載入農友身份中...
-</div>
-
-<!-- 首次使用綁定彈窗 -->
-<div id="bindModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
-  <div style="background: #fff; padding: 20px; border-radius: 12px; width: 85%; max-width: 300px; text-align: center;">
-    <h3 style="margin-top: 0; color: #2e7d32;">🌾 首次使用綁定</h3>
-    <p style="font-size: 14px; color: #666;">請輸入您的<b>真實姓名</b>（僅需輸入一次）：</p>
-    <input type="text" id="inputBindName" placeholder="例如：蔡勝豪" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-bottom: 15px;">
-    <button onclick="submitBinding()" style="width: 100%; padding: 12px; background: #2e7d32; color: #fff; border: none; border-radius: 6px; font-size: 16px; font-weight: bold;">確認送出</button>
+  <!-- 頂端身份狀態列 -->
+  <div id="userBar" style="background: #e8f5e9; padding: 10px; border-radius: 8px; margin: 12px 12px 0 12px; font-weight: bold; color: #2e7d32;">
+    👤 載入農友身份中...
   </div>
-</div>
-  
-  <div class="nav-tabs">
+
+  <!-- 首次使用綁定彈窗 -->
+  <div id="bindModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: #fff; padding: 20px; border-radius: 12px; width: 85%; max-width: 300px; text-align: center;">
+      <h3 style="margin-top: 0; color: #2e7d32;">🌾 首次使用綁定</h3>
+      <p style="font-size: 14px; color: #666;">請輸入您的<b>真實姓名</b>（僅需輸入一次）：</p>
+      <input type="text" id="inputBindName" placeholder="例如：蔡勝豪" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-bottom: 15px;">
+      <button onclick="submitBinding()" style="width: 100%; padding: 12px; background: #2e7d32; color: #fff; border: none; border-radius: 6px; font-size: 16px; font-weight: bold;">確認送出</button>
+    </div>
+  </div>
+    
+  <div class="nav-tabs" style="margin-top: 10px;">
     <button class="tab-btn active" onclick="switchTab('input')">✍️ 新增栽培紀錄</button>
     <button class="tab-btn" onclick="switchTab('history')">📖 我的歷史紀錄</button>
   </div>
@@ -101,7 +101,7 @@
       <button type="button" class="btn-add" id="btnAddItemGroup" onclick="addItemGroup()">➕ 增加一種資材/混藥</button>
     </div>
 
-    <!-- 一般農事/採收下拉區塊 (非資材作業時顯示) -->
+    <!-- 一般農事/採收下拉區塊 -->
     <div id="generalTaskSection" style="display:none;">
       <select id="generalTaskSelect"></select>
       <div class="clearable-container" style="margin-top:6px;">
@@ -153,10 +153,8 @@
           liff.login();
         } else {
           liff.getProfile().then(profile => {
-            currentUserId = profile.userId;
+            currentUserId = profile.userId; // 儲存正確的 LINE ID
             loadAllData(currentUserId);
-            // 👉 這裡加入一行：檢查是否綁定過
-      checkUserStatus(currentLineUserId);
           });
         }
       }).catch(err => {
@@ -169,7 +167,21 @@
         .then(res => res.json())
         .then(data => {
           currentUserName = data.farmer ? data.farmer.name : '未綁定農友';
-          document.getElementById('userInfo').innerHTML = `👤 農友：${currentUserName}`;
+          
+          // 更新頂端資訊與檢查是否需要跳出彈窗
+          const userBar = document.getElementById('userBar');
+          const userInfo = document.getElementById('userInfo');
+          const bindModal = document.getElementById('bindModal');
+
+          if (currentUserName !== '未綁定農友') {
+            userBar.innerHTML = `👤 農友：<b>${currentUserName}</b>`;
+            userInfo.innerHTML = `👤 農友：${currentUserName}`;
+            bindModal.style.display = 'none';
+          } else {
+            userBar.innerHTML = `⚠️ 尚未綁定身份，請填寫姓名`;
+            userInfo.innerHTML = `👤 農友：未綁定農友`;
+            bindModal.style.display = 'flex'; // 彈窗開關啟動！
+          }
           
           const fieldSelect = document.getElementById('fieldSelect');
           fieldSelect.innerHTML = '';
@@ -195,6 +207,31 @@
           materialData = data.pesticides || {};
           onActionCategoryChange();
         });
+    }
+
+    // 按下彈窗「確認送出」觸發
+    function submitBinding() {
+      const nameInput = document.getElementById("inputBindName").value.trim();
+      if (!nameInput) {
+        alert("請先輸入您的姓名！");
+        return;
+      }
+
+      fetch(GAS_API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "bindFarmer",
+          lineUserId: currentUserId,
+          userName: nameInput
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert("綁定成功！歡迎 " + nameInput + " 農友");
+        document.getElementById("bindModal").style.display = "none";
+        loadAllData(currentUserId); // 重新載入最新農友名稱與選單
+      })
+      .catch(err => alert("綁定失敗，請重試：" + err));
     }
 
     function onActionCategoryChange() {
@@ -298,7 +335,6 @@
       itemList.appendChild(newGroup);
     }
 
-    // ✕ 一鍵清空通用函式
     function clearInput(targetInputId) {
       const elem = document.getElementById(targetInputId);
       elem.value = '';
@@ -312,7 +348,6 @@
       searchElem.focus();
     }
 
-    /* 📋 滿版選單 Modal 邏輯 */
     function openMaterialModal(targetInputId, category) {
       activeTargetInputId = targetInputId;
       document.getElementById('modalTitle').innerHTML = `📋 請選擇${category}品項`;
@@ -449,53 +484,6 @@
         btnSubmit.innerHTML = '🚀 點擊送出栽培紀錄';
       });
     }
-    // ==========================================
-// 📌 綁定身份專用邏輯（貼在 script 最底部）
-// ==========================================
-
-// 1. 檢查農友身份狀態
-function checkUserStatus(lineUserId) {
-  fetch(`${GAS_URL}?action=getAllInitData&userId=${lineUserId}`)
-    .then(res => res.json())
-    .then(data => {
-      // 如果後台回傳的名稱不是預設的 '未綁定農友'，代表已綁定
-      if (data.farmer && data.farmer.name !== '未綁定農友') {
-        const userBar = document.getElementById("userBar");
-        if (userBar) userBar.innerHTML = "👤 農友：<b>" + data.farmer.name + "</b>";
-      } else {
-        // 未綁定：跳出輸入姓名的彈窗
-        const bindModal = document.getElementById("bindModal");
-        if (bindModal) bindModal.style.display = "flex";
-      }
-    })
-    .catch(err => console.error("驗證身分錯誤:", err));
-}
-
-// 2. 按下彈窗「確認送出」時觸發
-function submitBinding() {
-  const nameInput = document.getElementById("inputBindName").value.trim();
-  if (!nameInput) {
-    alert("請先輸入您的姓名！");
-    return;
-  }
-
-  // 送出 POST 請求給 GAS 進行 Farmers 資料庫寫入
-  fetch(GAS_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "bindFarmer",
-      lineUserId: currentLineUserId, // LIFF 拿到的 LINE ID
-      userName: nameInput
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    alert("綁定成功！歡迎 " + nameInput + " 農友");
-    document.getElementById("bindModal").style.display = "none";
-    location.reload(); // 重新整理網頁，自動載入最新農友名稱與選單
-  })
-  .catch(err => alert("綁定失敗，請重試：" + err));
-}
   </script>
 </body>
 </html>
