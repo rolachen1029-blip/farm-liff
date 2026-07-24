@@ -48,27 +48,23 @@
 </head>
 <body>
 
-  <!-- 頂端身份狀態列 -->
-  <div id="userBar" style="background: #e8f5e9; padding: 10px; border-radius: 8px; margin: 12px 12px 0 12px; font-weight: bold; color: #2e7d32;">
-    👤 載入農友身份中...
-  </div>
-
   <!-- 首次使用綁定彈窗 -->
   <div id="bindModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
     <div style="background: #fff; padding: 20px; border-radius: 12px; width: 85%; max-width: 300px; text-align: center;">
       <h3 style="margin-top: 0; color: #2e7d32;">🌾 首次使用綁定</h3>
       <p style="font-size: 14px; color: #666;">請輸入您的<b>真實姓名</b>（僅需輸入一次）：</p>
-      <input type="text" id="inputBindName" placeholder="例如：王大明" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-bottom: 15px;">
+      <input type="text" id="inputBindName" placeholder="例如：蔡勝豪" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-bottom: 15px;">
       <button onclick="submitBinding()" style="width: 100%; padding: 12px; background: #2e7d32; color: #fff; border: none; border-radius: 6px; font-size: 16px; font-weight: bold;">確認送出</button>
     </div>
   </div>
     
-  <div class="nav-tabs" style="margin-top: 10px;">
+  <div class="nav-tabs">
     <button class="tab-btn active" onclick="switchTab('input')">✍️ 新增栽培紀錄</button>
     <button class="tab-btn" onclick="switchTab('history')">📖 我的歷史紀錄</button>
   </div>
 
   <div id="tabInput" class="card">
+    <!-- 身分卡片：單一顯示區域 -->
     <div id="userInfo" class="user-badge">⏳ 辨識 LINE 身份中...</div>
     
     <label>1. 📅 請選擇作業日期：</label>
@@ -153,7 +149,7 @@
           liff.login();
         } else {
           liff.getProfile().then(profile => {
-            currentUserId = profile.userId; // 儲存正確的 LINE ID
+            currentUserId = profile.userId;
             loadAllData(currentUserId);
           });
         }
@@ -168,19 +164,18 @@
         .then(data => {
           currentUserName = data.farmer ? data.farmer.name : '未綁定農友';
           
-          // 更新頂端資訊與檢查是否需要跳出彈窗
-          const userBar = document.getElementById('userBar');
           const userInfo = document.getElementById('userInfo');
           const bindModal = document.getElementById('bindModal');
 
           if (currentUserName !== '未綁定農友') {
-            userBar.innerHTML = `👤 農友：<b>${currentUserName}</b>`;
-            userInfo.innerHTML = `👤 農友：${currentUserName}`;
+            userInfo.innerHTML = `👤 農友：<b>${currentUserName}</b>`;
             bindModal.style.display = 'none';
           } else {
-            userBar.innerHTML = `⚠️ 尚未綁定身份，請填寫姓名`;
-            userInfo.innerHTML = `👤 農友：未綁定農友`;
-            bindModal.style.display = 'flex'; // 彈窗開關啟動！
+            userInfo.innerHTML = `⚠️ 尚未綁定身分`;
+            userInfo.style.background = '#fff3cd';
+            userInfo.style.color = '#856404';
+            userInfo.style.borderColor = '#ffeeba';
+            bindModal.style.display = 'flex'; // 自動跳出綁定彈窗
           }
           
           const fieldSelect = document.getElementById('fieldSelect');
@@ -229,7 +224,7 @@
       .then(data => {
         alert("綁定成功！歡迎 " + nameInput + " 農友");
         document.getElementById("bindModal").style.display = "none";
-        loadAllData(currentUserId); // 重新載入最新農友名稱與選單
+        loadAllData(currentUserId);
       })
       .catch(err => alert("綁定失敗，請重試：" + err));
     }
