@@ -32,9 +32,11 @@
     /* 數字鍵盤 */
     .btn-num { background: #485460; color: #fff; box-shadow: 0 4px #2f3640; }
 
-    /* 功能鍵 (歸零 C、退格 ⌫) */
+    /* 功能鍵 (歸零 C) */
     .btn-clear { background: #ee5253; color: #fff; box-shadow: 0 4px #c8d6e5; font-size: 20px; }
-    .btn-backspace { background: #ff9f43; color: #fff; box-shadow: 0 4px #e67e22; font-size: 20px; }
+    
+    /* ENTER 換列鍵 */
+    .btn-enter { background: #0984e3; color: #fff; box-shadow: 0 4px #74b9ff; font-size: 20px; }
   </style>
 </head>
 <body>
@@ -76,7 +78,7 @@
 
     <button class="btn btn-clear" onclick="clearCurrent()">C 清空</button>
     <button class="btn btn-num" onclick="pressNum(0)">0</button>
-    <button class="btn btn-backspace" onclick="backspace()">⌫ 刪除</button>
+    <button class="btn btn-enter" onclick="pressEnter()">↵ ENTER</button>
   </div>
 
   <script>
@@ -113,18 +115,18 @@
       calculate();
     }
 
+    function pressEnter() {
+      // 按下 ENTER 鍵換下一個輸入列
+      if (currentMode === 'water') {
+        setMode('ratio');
+      } else {
+        setMode('water');
+      }
+    }
+
     function clearCurrent() {
       if (currentMode === 'water') waterVal = '0';
       else ratioVal = '0';
-      calculate();
-    }
-
-    function backspace() {
-      if (currentMode === 'water') {
-        waterVal = waterVal.length > 1 ? waterVal.slice(0, -1) : '0';
-      } else {
-        ratioVal = ratioVal.length > 1 ? ratioVal.slice(0, -1) : '0';
-      }
       calculate();
     }
 
