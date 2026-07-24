@@ -9,49 +9,51 @@
     
     /* 計算機液晶螢幕風格 */
     .screen { background: #2f3640; border: 3px solid #485460; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.5); }
-    .screen-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 16px; color: #dcdde1; }
-    .screen-val { font-size: 20px; font-weight: bold; color: #00d2d3; }
+    .screen-box { background: #353b48; border: 2px solid #57606f; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s; }
+    .screen-box.active { border-color: #00d2d3; background: #1e272e; box-shadow: 0 0 8px rgba(0,210,211,0.5); }
+    
+    .screen-title { font-size: 15px; color: #dcdde1; font-weight: bold; }
+    .screen-val { font-size: 24px; font-weight: bold; color: #00d2d3; font-family: 'Courier New', monospace; }
     
     /* 計算結果大字區 */
-    .result-box { background: #0f2027; border: 2px solid #10ac84; border-radius: 8px; padding: 12px; text-align: center; margin-top: 10px; }
+    .result-box { background: #0f2027; border: 2px solid #10ac84; border-radius: 8px; padding: 12px; text-align: center; margin-top: 8px; }
     .result-title { font-size: 14px; color: #10ac84; font-weight: bold; }
     .result-num { font-size: 38px; font-weight: 900; color: #1dd1a1; font-family: 'Courier New', monospace; text-shadow: 0 0 10px rgba(29,209,161,0.3); }
 
-    /* 按鈕分區標題 */
-    .section-title { font-size: 14px; font-weight: bold; color: #ff9f43; margin: 10px 0 6px 0; display: flex; justify-content: space-between; }
+    /* 模式提示欄 */
+    .status-bar { font-size: 14px; font-weight: bold; color: #ff9f43; margin: 6px 0 10px 0; text-align: center; background: rgba(255,159,67,0.1); padding: 6px; border-radius: 6px; border: 1px dashed #ff9f43; }
 
     /* 網格按鈕排版 */
-    .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+    .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; flex: 1; }
     
     /* 大按鈕通用樣式 */
-    .btn { background: #353b48; color: #f5f6fa; border: none; padding: 14px 0; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px #2f3640; active: transform 0.1s; -webkit-tap-highlight-color: transparent; }
+    .btn { background: #353b48; color: #f5f6fa; border: none; padding: 16px 0; border-radius: 10px; font-size: 22px; font-weight: bold; cursor: pointer; box-shadow: 0 4px #2f3640; -webkit-tap-highlight-color: transparent; }
     .btn:active { transform: translateY(3px); box-shadow: 0 1px #2f3640; }
     
-    /* 水量按鈕風格 (藍色系) */
-    .btn-water { background: #22a6b3; color: #fff; box-shadow: 0 4px #10ac84; }
-    .btn-water.active { background: #10ac84; border: 2px solid #fff; }
-
-    /* 倍數按鈕風格 (橘色系) */
-    .btn-ratio { background: #e67e22; color: #fff; box-shadow: 0 4px #d35400; }
-    .btn-ratio.active { background: #f39c12; border: 2px solid #fff; }
-
-    /* 功能鍵 (歸零 C) */
-    .btn-clear { background: #ee5253; color: #fff; box-shadow: 0 4px #c8d6e5; grid-column: span 2; font-size: 20px; }
-    
     /* 數字鍵盤 */
-    .btn-num { background: #57606f; color: #fff; box-shadow: 0 4px #2f3640; }
+    .btn-num { background: #485460; color: #fff; box-shadow: 0 4px #2f3640; }
+
+    /* 功能鍵 (歸零 C、退格 ⌫) */
+    .btn-clear { background: #ee5253; color: #fff; box-shadow: 0 4px #c8d6e5; font-size: 18px; }
+    .btn-backspace { background: #ff9f43; color: #fff; box-shadow: 0 4px #e67e22; font-size: 18px; }
+    
+    /* 切換目標按鈕 */
+    .btn-switch { background: #0984e3; color: #fff; box-shadow: 0 4px #74b9ff; font-size: 16px; grid-column: span 3; padding: 12px 0; }
   </style>
 </head>
 <body>
 
   <!-- 📟 液晶顯示螢幕 -->
   <div class="screen">
-    <div class="screen-row">
-      <span>🚰 噴藥總水量：</span>
+    <!-- 水量顯示列（可點擊切換輸入） -->
+    <div id="boxWater" class="screen-box active" onclick="setMode('water')">
+      <span class="screen-title">🚰 噴藥總水量：</span>
       <span id="dispWater" class="screen-val">0 公升</span>
     </div>
-    <div class="screen-row">
-      <span>🧪 稀釋倍數：</span>
+
+    <!-- 倍數顯示列（可點擊切換輸入） -->
+    <div id="boxRatio" class="screen-box" onclick="setMode('ratio')">
+      <span class="screen-title">🧪 稀釋倍數：</span>
       <span id="dispRatio" class="screen-val">0 倍</span>
     </div>
 
@@ -62,42 +64,15 @@
     </div>
   </div>
 
-  <!-- 🚰 水量快選區 -->
-  <div class="section-title">
-    <span>1️⃣ 請選擇或輸入水量 (公升)</span>
-  </div>
-  <div class="btn-grid">
-    <button class="btn btn-water" onclick="selectWater(100)">100L</button>
-    <button class="btn btn-water" onclick="selectWater(200)">200L</button>
-    <button class="btn btn-water" onclick="selectWater(300)">300L</button>
-    <button class="btn btn-water" onclick="selectWater(500)">500L</button>
-  </div>
+  <!-- 💡 當前正在輸入項目提示 -->
+  <div id="statusBar" class="status-bar">👇 請用下方鍵盤輸入：【🚰 噴藥總水量】</div>
 
-  <!-- 🧪 倍數快選區 -->
-  <div class="section-title">
-    <span>2️⃣ 請選擇稀釋倍數 (倍)</span>
-  </div>
-  <div class="btn-grid">
-    <button class="btn btn-ratio" onclick="selectRatio(800)">800倍</button>
-    <button class="btn btn-ratio" onclick="selectRatio(1000)">1000倍</button>
-    <button class="btn btn-ratio" onclick="selectRatio(1500)">1500倍</button>
-    <button class="btn btn-ratio" onclick="selectRatio(2000)">2000倍</button>
-    <button class="btn btn-ratio" onclick="selectRatio(2500)">2500倍</button>
-    <button class="btn btn-ratio" onclick="selectRatio(3000)">3000倍</button>
-    <button class="btn btn-ratio" onclick="selectRatio(4000)">4000倍</button>
-    <button class="btn btn-ratio" onclick="selectRatio(5000)">5000倍</button>
-  </div>
-
-  <!-- 🔢 自訂數字鍵盤 (針對特殊水量/倍數) -->
-  <div class="section-title">
-    <span>自訂水量微調鍵盤</span>
-  </div>
+  <!-- 🔢 數字大按鍵區 -->
   <div class="btn-grid">
     <button class="btn btn-num" onclick="pressNum(7)">7</button>
     <button class="btn btn-num" onclick="pressNum(8)">8</button>
     <button class="btn btn-num" onclick="pressNum(9)">9</button>
-    <button class="btn btn-clear" onclick="resetAll()">C 歸零</button>
-    
+
     <button class="btn btn-num" onclick="pressNum(4)">4</button>
     <button class="btn btn-num" onclick="pressNum(5)">5</button>
     <button class="btn btn-num" onclick="pressNum(6)">6</button>
@@ -105,51 +80,85 @@
     <button class="btn btn-num" onclick="pressNum(1)">1</button>
     <button class="btn btn-num" onclick="pressNum(2)">2</button>
     <button class="btn btn-num" onclick="pressNum(3)">3</button>
+
+    <button class="btn btn-clear" onclick="clearCurrent()">C 清空</button>
     <button class="btn btn-num" onclick="pressNum(0)">0</button>
+    <button class="btn btn-backspace" onclick="backspace()">⌫ 刪除</button>
+
+    <button id="btnSwitch" class="btn btn-switch" onclick="toggleMode()">➡️ 切換至輸入【🧪 稀釋倍數】</button>
   </div>
 
   <script>
-    let currentWater = 0;
-    let currentRatio = 0;
-    let isTypingWater = true; // 是否正在用數字鍵盤打水量
+    let currentMode = 'water'; // 'water' 或 'ratio'
+    let waterVal = '0';
+    let ratioVal = '0';
 
-    function selectWater(val) {
-      currentWater = val;
-      isTypingWater = false;
-      calculate();
+    function setMode(mode) {
+      currentMode = mode;
+      updateUI();
     }
 
-    function selectRatio(val) {
-      currentRatio = val;
-      calculate();
+    function toggleMode() {
+      currentMode = currentMode === 'water' ? 'ratio' : 'water';
+      updateUI();
+    }
+
+    function updateUI() {
+      const boxWater = document.getElementById('boxWater');
+      const boxRatio = document.getElementById('boxRatio');
+      const statusBar = document.getElementById('statusBar');
+      const btnSwitch = document.getElementById('btnSwitch');
+
+      if (currentMode === 'water') {
+        boxWater.classList.add('active');
+        boxRatio.classList.remove('active');
+        statusBar.innerHTML = '👇 請用下方鍵盤輸入：【🚰 噴藥總水量】';
+        btnSwitch.innerHTML = '➡️ 切換至輸入【🧪 稀釋倍數】';
+      } else {
+        boxWater.classList.remove('active');
+        boxRatio.classList.add('active');
+        statusBar.innerHTML = '👇 請用下方鍵盤輸入：【🧪 稀釋倍數】';
+        btnSwitch.innerHTML = '➡️ 切換至輸入【🚰 噴藥總水量】';
+      }
     }
 
     function pressNum(num) {
-      if (!isTypingWater) {
-        currentWater = 0; // 如果剛點完快選，再按數字鍵就重新輸入
-        isTypingWater = true;
+      if (currentMode === 'water') {
+        if (waterVal === '0') waterVal = String(num);
+        else waterVal += String(num);
+      } else {
+        if (ratioVal === '0') ratioVal = String(num);
+        else ratioVal += String(num);
       }
-      currentWater = currentWater * 10 + num;
       calculate();
     }
 
-    function resetAll() {
-      currentWater = 0;
-      currentRatio = 0;
-      isTypingWater = true;
+    function clearCurrent() {
+      if (currentMode === 'water') waterVal = '0';
+      else ratioVal = '0';
+      calculate();
+    }
+
+    function backspace() {
+      if (currentMode === 'water') {
+        waterVal = waterVal.length > 1 ? waterVal.slice(0, -1) : '0';
+      } else {
+        ratioVal = ratioVal.length > 1 ? ratioVal.slice(0, -1) : '0';
+      }
       calculate();
     }
 
     function calculate() {
-      document.getElementById('dispWater').innerHTML = currentWater + ' 公升';
-      document.getElementById('dispRatio').innerHTML = currentRatio + ' 倍';
+      document.getElementById('dispWater').innerHTML = waterVal + ' 公升';
+      document.getElementById('dispRatio').innerHTML = ratioVal + ' 倍';
 
+      const w = parseFloat(waterVal);
+      const r = parseFloat(ratioVal);
       const resultElem = document.getElementById('dispResult');
 
-      if (currentWater > 0 && currentRatio > 0) {
-        // 計算公式： (水量 * 1000) / 倍數
-        const cc = (currentWater * 1000) / currentRatio;
-        // 四捨五入到小數點第 1 位
+      if (w > 0 && r > 0) {
+        // 公式：(水量 * 1000) / 倍數
+        const cc = (w * 1000) / r;
         const finalCc = Math.round(cc * 10) / 10;
         resultElem.innerHTML = finalCc + ' cc (公克)';
       } else {
