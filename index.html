@@ -120,12 +120,12 @@
     <div id="historyList">⏳ 正在讀取歷史紀錄...</div>
   </div>
 
- <!-- 頁面 3：新增的栽培行事曆 (含顏色圖例) -->
+<!-- 頁面 3：栽培行事曆 (含顏色圖例 + 篩選選單) -->
   <div id="tabCalendar" class="card" style="display:none;">
     <h4 style="margin-top:0; color:#2e7d32; margin-bottom:8px;">📅 栽培行事曆紀錄</h4>
     
-    <!-- 🎨 顏色分類對照表 (Legend) -->
-    <div style="display: flex; flex-wrap: wrap; gap: 10px; background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 14px; font-size: 13px; font-weight: bold; border: 1px solid #e0e0e0;">
+    <!-- 🎨 顏色分類對照表 -->
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; font-weight: bold; border: 1px solid #e0e0e0;">
       <div style="display: flex; align-items: center; gap: 4px;">
         <span style="width: 12px; height: 12px; background-color: #e53935; border-radius: 50%; display: inline-block;"></span> 噴藥 / 防治
       </div>
@@ -140,7 +140,17 @@
       </div>
     </div>
 
-    <!-- 日曆渲染區塊 -->
+    <!-- 🔍 行事曆篩選條件列 -->
+    <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+      <select id="calFilterField" onchange="filterCalendarEvents()" style="flex: 1; margin-top: 0; padding: 8px; font-size: 14px; font-weight: bold; border-color: #2e7d32;">
+        <option value="ALL">🌱 所有田區</option>
+      </select>
+      <select id="calFilterAction" onchange="filterCalendarEvents()" style="flex: 1; margin-top: 0; padding: 8px; font-size: 14px; font-weight: bold; border-color: #2e7d32;">
+        <option value="ALL">🛠️ 所有作業種類</option>
+      </select>
+    </div>
+
+    <!-- 日曆區塊 -->
     <div id="calendar"></div>
   </div>
     
@@ -466,53 +476,100 @@
         });
     }
 
+ let rawCalendarRecords = []; // 儲存原始紀錄資料
+
     /* 📅 載入與初始化行事曆 */
     function loadMyCalendar() {
       fetch(`${GAS_API_URL}?action=getMyHistory&userId=${currentUserId}`)
         .then(res => res.json())
         .then(records => {
-          const events = (records || []).map(r => {
-            let bgColor = '#2e7d32'; // 預設綠色
-            if (r.action.includes('病蟲害') || r.action.includes('噴藥')) bgColor = '#e53935'; // 紅色
-            else if (r.action.includes('施肥')) bgColor = '#f57c00'; // 橘色
-            else if (r.action.includes('採收')) bgColor = '#8e24aa'; // 紫色
+          rawCalendarRecords = records || [];
 
-            return {
-              title: `${r.field} - ${r.action}`,
-              start: r.workDate,
-              backgroundColor: bgColor,
-              extendedProps: {
-                detail: r.detail,
-                field: r.field,
-                action: r.action,
-                status: r.status
-              }
-            };
-          });
+          // 1. 動態建立「田區」與「作業」篩選下拉選單的選項
+          setupCalendarFilterOptions(rawCalendarRecords);
 
-          const calendarEl = document.getElementById('calendar');
-          if (calendarObj) {
-            calendarObj.destroy(); // 避免重複建立
-          }
-
-          calendarObj = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            locale: 'zh-tw',
-            headerToolbar: {
-              left: 'prev,next',
-              center: 'title',
-              right: 'today'
-            },
-            buttonText: { today: '今天' },
-            events: events,
-            eventClick: function(info) {
-              const props = info.event.extendedProps;
-              alert(`📅 日期：${info.event.startStr}\n🌱 田區：${props.field}\n🛠️ 作業：${props.action}\n📝 明細：${props.detail}\n📌 狀態：${props.status}`);
-            }
-          });
-
-          calendarObj.render();
+          // 2. 渲染日曆
+          renderCalendar(rawCalendarRecords);
         });
+    }
+
+    // 設定篩選選單內容
+    function setupCalendarFilterOptions(records) {
+      const fieldSelect = document.getElementById('calFilterField');
+      const actionSelect = document.getElementById('calFilterAction');
+
+      const fields = new Set();
+      const actions = new Set();
+
+      records.forEach(r => {
+        if (r.field) fields.add(r.field);
+        if (r.action) actions.add(r.action);
+      });
+
+      fieldSelect.innerHTML = '<option value="ALL">🌱 所有田區</option>';
+      fields.forEach(f => fieldSelect.innerHTML += `<option value="${f}">${f}</option>`);
+
+      actionSelect.innerHTML = '<option value="ALL">🛠️ 所有作業種類</option>';
+      actions.forEach(a => actionSelect.innerHTML += `<option value="${a}">${a}</option>`);
+    }
+
+    // 觸發篩選過濾
+    function filterCalendarEvents() {
+      const selectedField = document.getElementById('calFilterField').value;
+      const selectedAction = document.getElementById('calFilterAction').value;
+
+      const filtered = rawCalendarRecords.filter(r => {
+        const matchField = (selectedField === 'ALL' || r.field === selectedField);
+        const matchAction = (selectedAction === 'ALL' || r.action === selectedAction);
+        return matchField && matchAction;
+      });
+
+      renderCalendar(filtered);
+    }
+
+    // 真正的日曆渲染邏輯
+    function renderCalendar(records) {
+      const events = records.map(r => {
+        let bgColor = '#2e7d32'; // 預設綠色
+        if (r.action.includes('病蟲害') || r.action.includes('噴藥')) bgColor = '#e53935'; // 紅色
+        else if (r.action.includes('施肥')) bgColor = '#f57c00'; // 橘色
+        else if (r.action.includes('採收')) bgColor = '#8e24aa'; // 紫色
+
+        return {
+          title: `${r.field} - ${r.action}`,
+          start: r.workDate,
+          backgroundColor: bgColor,
+          extendedProps: {
+            detail: r.detail,
+            field: r.field,
+            action: r.action,
+            status: r.status
+          }
+        };
+      });
+
+      const calendarEl = document.getElementById('calendar');
+      if (calendarObj) {
+        calendarObj.destroy(); // 避免重複建立
+      }
+
+      calendarObj = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'zh-tw',
+        headerToolbar: {
+          left: 'prev,next',
+          center: 'title',
+          right: 'today'
+        },
+        buttonText: { today: '今天' },
+        events: events,
+        eventClick: function(info) {
+          const props = info.event.extendedProps;
+          alert(`📅 日期：${info.event.startStr}\n🌱 田區：${props.field}\n🛠️ 作業：${props.action}\n📝 明細：${props.detail}\n📌 狀態：${props.status}`);
+        }
+      });
+
+      calendarObj.render();
     }
 
     function submitData() {
