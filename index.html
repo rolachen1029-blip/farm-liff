@@ -4,10 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>產銷履歷栽培紀錄管理系統</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f6f8; color: #212121; margin: 0; font-size: 16px; }
     .nav-tabs { display: flex; background: #fff; border-bottom: 3px solid #2e7d32; }
-    .tab-btn { flex: 1; padding: 14px; text-align: center; font-weight: bold; border: none; background: none; font-size: 16px; color: #666; cursor: pointer; }
+    .tab-btn { flex: 1; padding: 14px 8px; text-align: center; font-weight: bold; border: none; background: none; font-size: 15px; color: #666; cursor: pointer; }
     .tab-btn.active { background: #2e7d32; color: #fff; }
     
     .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin: 12px; }
@@ -44,11 +47,16 @@
     .modal-list-container { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; border-top: 1px solid #f0f0f0; }
     .list-item { padding: 14px 12px; border-bottom: 1px solid #eee; font-size: 16px; cursor: pointer; }
     .list-item:active { background-color: #e8f5e9; color: #2e7d32; font-weight: bold; }
+
+    /* 日曆客製化樣式 */
+    #calendar { min-height: 450px; font-size: 14px; }
+    .fc-event { cursor: pointer; border: none !important; border-radius: 4px; padding: 2px 4px; font-size: 12px; }
+    .fc-toolbar-title { font-size: 16px !important; color: #1b5e20; }
+    .fc-button-primary { background-color: #2e7d32 !important; border-color: #2e7d32 !important; }
   </style>
 </head>
 <body>
 
-  <!-- 首次使用綁定彈窗 -->
   <div id="bindModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
     <div style="background: #fff; padding: 20px; border-radius: 12px; width: 85%; max-width: 300px; text-align: center;">
       <h3 style="margin-top: 0; color: #2e7d32;">🌾 首次使用綁定</h3>
@@ -59,12 +67,12 @@
   </div>
     
   <div class="nav-tabs">
-    <button class="tab-btn active" onclick="switchTab('input')">✍️ 新增栽培紀錄</button>
-    <button class="tab-btn" onclick="switchTab('history')">📖 我的歷史紀錄</button>
+    <button id="btnTabInput" class="tab-btn active" onclick="switchTab('input')">✍️ 新增紀錄</button>
+    <button id="btnTabHistory" class="tab-btn" onclick="switchTab('history')">📖 歷史紀錄</button>
+    <button id="btnTabCalendar" class="tab-btn" onclick="switchTab('calendar')">📅 栽培日曆</button>
   </div>
 
   <div id="tabInput" class="card">
-    <!-- 身分卡片：單一顯示區域 -->
     <div id="userInfo" class="user-badge">⏳ 辨識 LINE 身份中...</div>
     
     <label>1. 📅 請選擇作業日期：</label>
@@ -80,7 +88,6 @@
 
     <label style="margin-top:12px;">4. 📝 作業內容 / 資材明細：</label>
 
-    <!-- 資材填寫區塊 -->
     <div id="materialSection">
       <div id="pesticideWaterBox" class="water-box" style="display:none;">
         <label style="margin-top:0; color:#00695c;">🚰 本次噴藥總水量：</label>
@@ -97,7 +104,6 @@
       <button type="button" class="btn-add" id="btnAddItemGroup" onclick="addItemGroup()">➕ 增加一種資材/混藥</button>
     </div>
 
-    <!-- 一般農事/採收下拉區塊 -->
     <div id="generalTaskSection" style="display:none;">
       <select id="generalTaskSelect"></select>
       <div class="clearable-container" style="margin-top:6px;">
@@ -114,7 +120,11 @@
     <div id="historyList">⏳ 正在讀取歷史紀錄...</div>
   </div>
 
-  <!-- 全螢幕彈出視窗 Modal -->
+  <div id="tabCalendar" class="card" style="display:none;">
+    <h4 style="margin-top:0; color:#2e7d32; margin-bottom:12px;">📅 栽培行事曆紀錄</h4>
+    <div id="calendar"></div>
+  </div>
+
   <div id="materialModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
@@ -139,6 +149,7 @@
     let currentUserId = "", currentUserName = "", actionData = {}, materialData = {};
     let itemGroupCount = 0;
     let activeTargetInputId = "";
+    let calendarObj = null; // FullCalendar 實例
 
     window.onload = function() {
       const today = new Date().toISOString().split('T')[0];
@@ -175,7 +186,7 @@
             userInfo.style.background = '#fff3cd';
             userInfo.style.color = '#856404';
             userInfo.style.borderColor = '#ffeeba';
-            bindModal.style.display = 'flex'; // 自動跳出綁定彈窗
+            bindModal.style.display = 'flex';
           }
           
           const fieldSelect = document.getElementById('fieldSelect');
@@ -204,7 +215,6 @@
         });
     }
 
-    // 按下彈窗「確認送出」觸發
     function submitBinding() {
       const nameInput = document.getElementById("inputBindName").value.trim();
       if (!nameInput) {
@@ -393,14 +403,27 @@
       closeMaterialModal();
     }
 
+    /* 切換頁籤邏輯 */
     function switchTab(tab) {
+      document.getElementById('tabInput').style.display = 'none';
+      document.getElementById('tabHistory').style.display = 'none';
+      document.getElementById('tabCalendar').style.display = 'none';
+
+      document.getElementById('btnTabInput').classList.remove('active');
+      document.getElementById('btnTabHistory').classList.remove('active');
+      document.getElementById('btnTabCalendar').classList.remove('active');
+
       if (tab === 'input') {
         document.getElementById('tabInput').style.display = 'block';
-        document.getElementById('tabHistory').style.display = 'none';
-      } else {
-        document.getElementById('tabInput').style.display = 'none';
+        document.getElementById('btnTabInput').classList.add('active');
+      } else if (tab === 'history') {
         document.getElementById('tabHistory').style.display = 'block';
+        document.getElementById('btnTabHistory').classList.add('active');
         loadMyHistory();
+      } else if (tab === 'calendar') {
+        document.getElementById('tabCalendar').style.display = 'block';
+        document.getElementById('btnTabCalendar').classList.add('active');
+        loadMyCalendar(); // 載入日曆資料
       }
     }
 
@@ -421,6 +444,55 @@
             </div>`;
           });
           listDiv.innerHTML = html;
+        });
+    }
+
+    /* 📅 載入與初始化行事曆 */
+    function loadMyCalendar() {
+      fetch(`${GAS_API_URL}?action=getMyHistory&userId=${currentUserId}`)
+        .then(res => res.json())
+        .then(records => {
+          const events = (records || []).map(r => {
+            let bgColor = '#2e7d32'; // 預設綠色
+            if (r.action.includes('病蟲害') || r.action.includes('噴藥')) bgColor = '#e53935'; // 紅色
+            else if (r.action.includes('施肥')) bgColor = '#f57c00'; // 橘色
+            else if (r.action.includes('採收')) bgColor = '#8e24aa'; // 紫色
+
+            return {
+              title: `${r.field} - ${r.action}`,
+              start: r.workDate,
+              backgroundColor: bgColor,
+              extendedProps: {
+                detail: r.detail,
+                field: r.field,
+                action: r.action,
+                status: r.status
+              }
+            };
+          });
+
+          const calendarEl = document.getElementById('calendar');
+          if (calendarObj) {
+            calendarObj.destroy(); // 避免重複建立
+          }
+
+          calendarObj = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'zh-tw',
+            headerToolbar: {
+              left: 'prev,next',
+              center: 'title',
+              right: 'today'
+            },
+            buttonText: { today: '今天' },
+            events: events,
+            eventClick: function(info) {
+              const props = info.event.extendedProps;
+              alert(`📅 日期：${info.event.startStr}\n🌱 田區：${props.field}\n🛠️ 作業：${props.action}\n📝 明細：${props.detail}\n📌 狀態：${props.status}`);
+            }
+          });
+
+          calendarObj.render();
         });
     }
 
